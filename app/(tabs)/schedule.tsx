@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -16,8 +16,14 @@ export default function ScheduleScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('appointments');
   const { session } = useAuth();
   const { vehicle } = useVehicle(session?.user.id);
-  const { appointments } = useAppointments(vehicle?.id);
+  const { appointments, updateAppointment, refetch } = useAppointments(vehicle?.id);
   const { results, loading: searchLoading, searchNearby } = useShopSearch();
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   async function handleFindShops() {
     if (results.length > 0) {
@@ -52,17 +58,32 @@ export default function ScheduleScreen() {
       </View>
 
       {activeTab === 'appointments' ? (
-        appointments.length === 0 ? (
-          <View className="flex-1 items-center justify-center px-8">
-            <Text className="text-gray-400 text-center">No upcoming appointments. Find a shop to book one.</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={appointments}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => <AppointmentItem appointment={item} />}
-          />
-        )
+        <FlatList
+          data={appointments}
+          keyExtractor={item => item.id}
+          renderItem={({ item }) => (
+            <AppointmentItem
+              appointment={item}
+              onCancel={() => {
+                Alert.alert('Cancel Appointment', 'Remove this appointment?', [
+                  { text: 'Keep', style: 'cancel' },
+                  { text: 'Cancel Appointment', style: 'destructive', onPress: () => updateAppointment(item.id, 'cancelled') },
+                ]);
+              }}
+              onComplete={() => {
+                Alert.alert('Mark Complete', 'Mark this appointment as done?', [
+                  { text: 'Not yet', style: 'cancel' },
+                  { text: 'Mark Complete', onPress: () => updateAppointment(item.id, 'completed') },
+                ]);
+              }}
+            />
+          )}
+          ListEmptyComponent={
+            <View className="flex-1 items-center justify-center px-8 pt-16">
+              <Text className="text-gray-400 text-center">No upcoming appointments. Find a shop to book one.</Text>
+            </View>
+          }
+        />
       ) : searchLoading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563eb" />
