@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -13,14 +13,32 @@ export default function ProfileScreen() {
   const [mileage, setMileage] = useState(vehicle?.current_mileage?.toString() ?? '');
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (vehicle) {
+      setMake(vehicle.make ?? '');
+      setModel(vehicle.model ?? '');
+      setYear(vehicle.year ?? '');
+      setMileage(vehicle.current_mileage?.toString() ?? '');
+    }
+  }, [vehicle]);
+
   async function handleSave() {
+    if (!make || !model || !year || !mileage) {
+      Alert.alert('Validation', 'All fields are required.');
+      return;
+    }
+    const mileageNum = parseInt(mileage, 10);
+    if (isNaN(mileageNum)) {
+      Alert.alert('Validation', 'Mileage must be a number.');
+      return;
+    }
     setSaving(true);
     try {
       await updateVehicle({
         make,
         model,
         year,
-        current_mileage: parseInt(mileage, 10),
+        current_mileage: mileageNum,
       });
       Alert.alert('Saved', 'Vehicle details updated.');
     } catch (e: any) {
