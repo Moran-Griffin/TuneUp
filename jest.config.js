@@ -22,7 +22,7 @@ module.exports = {
       displayName: 'react-native',
       preset: 'jest-expo',
       setupFilesAfterEnv: ['@testing-library/react-native/matchers'],
-      testMatch: ['<rootDir>/**/*.test.tsx', '<rootDir>/**/*.spec.tsx'],
+      testMatch: ['<rootDir>/**/*.test.ts', '<rootDir>/**/*.test.tsx', '<rootDir>/**/*.spec.tsx'],
       testPathIgnorePatterns: ['/node_modules/', '/android/', '/ios/'],
       moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' },
     },
