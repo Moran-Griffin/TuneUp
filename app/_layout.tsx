@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
 import { useAppointments } from '@/hooks/useAppointments';
 import { ScheduledAppointmentModal } from '@/components/ScheduledAppointmentModal';
+import { registerForPushNotifications } from '@/lib/notifications';
 import { ServiceType, Shop } from '@/types';
 import '../global.css';
 
@@ -21,6 +23,25 @@ export default function RootLayout() {
     if (loading) return;
     if (!session) router.replace('/(auth)/welcome');
   }, [session, loading]);
+
+  useEffect(() => {
+    if (!session) return;
+    registerForPushNotifications();
+  }, [session]);
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data as any;
+      if (data?.type === 'location_prompt') {
+        router.push('/log/new');
+      } else if (data?.type === 'maintenance_reminder') {
+        router.push('/(tabs)/schedule');
+      } else if (data?.type === 'mileage_update') {
+        router.push('/(tabs)/profile');
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
