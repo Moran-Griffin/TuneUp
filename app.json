@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "TuneUp",
+    "slug": "tuneup",
+    "scheme": "tuneup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "platforms": ["ios"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.yourname.tuneup",
+      "infoPlist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "TuneUp detects when you're at an auto shop so you can quickly log service.",
+        "NSLocationWhenInUseUsageDescription": "TuneUp uses your location to find nearby shops.",
+        "NSLocationAlwaysUsageDescription": "TuneUp runs in the background to detect auto shop visits."
+      }
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "TuneUp detects when you're at an auto shop so you can quickly log service."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ]
+  }
+}
