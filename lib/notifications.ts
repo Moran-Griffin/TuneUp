@@ -25,9 +25,10 @@ export async function registerForPushNotifications(): Promise<string | null> {
   // Save token to Supabase user_profiles
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
-    await supabase
+    const { error } = await supabase
       .from('user_profiles')
       .upsert({ id: user.id, push_token: token, updated_at: new Date().toISOString() });
+    if (error) console.warn('Failed to save push token:', error.message);
   }
 
   return token;

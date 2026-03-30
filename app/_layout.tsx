@@ -26,7 +26,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!session) return;
-    registerForPushNotifications();
+    registerForPushNotifications().catch((e: unknown) => console.warn('Push registration failed:', e));
   }, [session]);
 
   useEffect(() => {
