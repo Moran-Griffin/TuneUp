@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -12,13 +12,15 @@ export default function ProfileScreen() {
   const [year, setYear] = useState(vehicle?.year ?? '');
   const [mileage, setMileage] = useState(vehicle?.current_mileage?.toString() ?? '');
   const [saving, setSaving] = useState(false);
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (vehicle) {
+    if (vehicle && !initialized.current) {
       setMake(vehicle.make ?? '');
       setModel(vehicle.model ?? '');
       setYear(vehicle.year ?? '');
       setMileage(vehicle.current_mileage?.toString() ?? '');
+      initialized.current = true;
     }
   }, [vehicle]);
 
