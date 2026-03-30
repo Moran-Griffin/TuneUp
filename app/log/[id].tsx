@@ -59,8 +59,12 @@ export default function EditLogScreen() {
     Alert.alert('Delete Entry', 'Are you sure?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
-        await deleteLog(id);
-        router.back();
+        try {
+          await deleteLog(id);
+          router.back();
+        } catch (e: any) {
+          Alert.alert('Error', e.message);
+        }
       }},
     ]);
   }
