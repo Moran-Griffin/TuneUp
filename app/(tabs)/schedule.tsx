@@ -67,19 +67,31 @@ export default function ScheduleScreen() {
               onCancel={() => {
                 Alert.alert('Cancel Appointment', 'Remove this appointment?', [
                   { text: 'Keep', style: 'cancel' },
-                  { text: 'Cancel Appointment', style: 'destructive', onPress: () => updateAppointment(item.id, 'cancelled') },
+                  { text: 'Cancel Appointment', style: 'destructive', onPress: async () => {
+                    try {
+                      await updateAppointment(item.id, 'cancelled');
+                    } catch (e: any) {
+                      Alert.alert('Error', e.message ?? 'Something went wrong.');
+                    }
+                  }},
                 ]);
               }}
               onComplete={() => {
                 Alert.alert('Mark Complete', 'Mark this appointment as done?', [
                   { text: 'Not yet', style: 'cancel' },
-                  { text: 'Mark Complete', onPress: () => updateAppointment(item.id, 'completed') },
+                  { text: 'Mark Complete', onPress: async () => {
+                    try {
+                      await updateAppointment(item.id, 'completed');
+                    } catch (e: any) {
+                      Alert.alert('Error', e.message ?? 'Something went wrong.');
+                    }
+                  }},
                 ]);
               }}
             />
           )}
           ListEmptyComponent={
-            <View className="flex-1 items-center justify-center px-8 pt-16">
+            <View className="items-center justify-center px-8 pt-16">
               <Text className="text-gray-400 text-center">No upcoming appointments. Find a shop to book one.</Text>
             </View>
           }
