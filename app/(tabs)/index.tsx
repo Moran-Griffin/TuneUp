@@ -11,7 +11,7 @@ import { getOilChangeStatus, getInspectionStatus } from '@/lib/serviceStatus';
 export default function HomeScreen() {
   const { session } = useAuth();
   const { vehicle, loading: vehicleLoading } = useVehicle(session?.user.id);
-  const { logs } = useMaintenanceLogs(vehicle?.id);
+  const { logs, loading: logsLoading } = useMaintenanceLogs(vehicle?.id);
 
   if (vehicleLoading) {
     return <View className="flex-1 items-center justify-center"><Text className="text-gray-400">Loading...</Text></View>;
@@ -57,7 +57,7 @@ export default function HomeScreen() {
             <Plus size={20} color="#2563eb" />
           </TouchableOpacity>
         </View>
-        {recentLogs.length === 0 ? (
+        {recentLogs.length === 0 && !logsLoading ? (
           <Text className="text-gray-400 text-center py-4">No service history yet</Text>
         ) : (
           recentLogs.map(log => (
