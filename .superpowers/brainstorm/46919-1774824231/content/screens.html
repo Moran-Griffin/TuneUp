@@ -1,0 +1,81 @@
+<h2>Screen structure & navigation</h2>
+<p class="subtitle">Does this flow cover everything you have in mind?</p>
+
+<div class="section">
+  <span class="label">Auth Flow (unauthenticated)</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:120px">
+      <div style="font-weight:600;margin-bottom:4px">Welcome</div>
+      <div style="font-size:13px;color:var(--text-secondary)">Sign in / Sign up</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--text-secondary)">→</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:120px">
+      <div style="font-weight:600;margin-bottom:4px">Vehicle Setup</div>
+      <div style="font-size:13px;color:var(--text-secondary)">Make, model, year, mileage, last oil change & inspection dates</div>
+    </div>
+    <div style="display:flex;align-items:center;color:var(--text-secondary)">→</div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:120px">
+      <div style="font-weight:600;margin-bottom:4px">Main App</div>
+      <div style="font-size:13px;color:var(--text-secondary)">Tab navigation</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Main App — Bottom Tab Bar</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+
+    <div style="background:var(--surface);border:2px solid var(--primary);border-radius:8px;padding:12px 16px;min-width:140px">
+      <div style="font-weight:600;margin-bottom:6px">🏠 Home</div>
+      <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary)">
+        <li>Next service due cards</li>
+        <li>Overdue alerts</li>
+        <li>Recent maintenance activity</li>
+        <li>Quick-add button</li>
+      </ul>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:140px">
+      <div style="font-weight:600;margin-bottom:6px">🔧 Log</div>
+      <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary)">
+        <li>Full service history list</li>
+        <li>Add entry (type, date, mileage, shop, cost, notes)</li>
+        <li>Filter by service type</li>
+      </ul>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:140px">
+      <div style="font-weight:600;margin-bottom:6px">📅 Schedule</div>
+      <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary)">
+        <li>Upcoming appointments</li>
+        <li>Book new appointment</li>
+        <li>Search shops / dealerships</li>
+        <li>Deep-link to booking pages</li>
+      </ul>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;min-width:140px">
+      <div style="font-weight:600;margin-bottom:6px">👤 Profile</div>
+      <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary)">
+        <li>Vehicle details (editable)</li>
+        <li>Notification preferences</li>
+        <li>Account settings</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Notification entry points</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;min-width:180px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px">📍 Location alert</div>
+      <div style="font-size:12px;color:var(--text-secondary)">"You've been at [Shop] for 5 min — getting work done?" → taps → quick-add log entry</div>
+    </div>
+    <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;min-width:180px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px">⚠️ Service reminder</div>
+      <div style="font-size:12px;color:var(--text-secondary)">"Oil change due soon" → taps → Schedule tab or log entry (dismisses notification)</div>
+    </div>
+  </div>
+</div>

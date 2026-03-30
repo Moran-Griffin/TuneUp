@@ -1,0 +1,19 @@
+{"type":"server-started","port":52266,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:52266","screen_dir":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content","state_dir":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/state"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/platform.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824256726}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824264055}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824264233}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824264931}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824265441}
+{"source":"user-event","type":"click","text":"B\n    \n      Comfortable with Swift / native iOS\n      Experience with Xcode, SwiftUI, or UIKit.","choice":"b","id":null,"timestamp":1774824276284}
+{"source":"user-event","type":"click","text":"A\n    \n      Comfortable with JavaScript / TypeScript\n      Web dev experience, React, Node, etc. — or open to learning JS-based mobile.","choice":"a","id":null,"timestamp":1774824277083}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/scope.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      iOS only (for now)\n      Ship fast, target iPhone. Android can come later if needed.","choice":"a","id":null,"timestamp":1774824304124}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/audience.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/backend.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/waiting.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/approaches.html"}
+{"source":"user-event","type":"click","text":"A\n    \n      Expo Managed Workflow ⭐ Recommended\n      Full Expo setup — no Xcode config needed until App Store submission. Geofencing via expo-location background tasks, push notifications via Expo Push Service (wraps Apple APNs).\n      \n        ProsFastest to get running on your phoneOTA updates (no App Store re-review for JS changes)Location + notifications both well-supportedGreat TypeScript support\n        ConsBackground geofencing requires a dev build (not Expo Go)Some advanced native APIs require ejecting","choice":"a","id":null,"timestamp":1774824616622}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/screens.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/46919-1774824231/content/data-model.html"}
+{"type":"server-stopped","reason":"idle timeout"}

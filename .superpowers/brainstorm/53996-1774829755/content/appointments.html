@@ -1,0 +1,43 @@
+<h2>Schedule tab — appointment booking</h2>
+<p class="subtitle">How users find shops and book appointments</p>
+
+<div class="section">
+  <span class="label">What's in the Schedule tab</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;flex:1;min-width:180px">
+      <div style="font-weight:600;margin-bottom:6px">Upcoming appointments</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">List of scheduled appointments with shop name, service type, and date. Can cancel or mark as completed.</div>
+    </div>
+
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;flex:1;min-width:180px">
+      <div style="font-weight:600;margin-bottom:6px">Find a shop</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">Search nearby mechanics and dealerships using Apple Maps. Shows name, distance, and rating. Tapping opens booking options.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Booking flow — how deep-linking works</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:8px">
+    <ol style="margin:0;padding-left:16px;font-size:13px;line-height:2;color:var(--text-secondary)">
+      <li>User taps a shop from search results</li>
+      <li>App shows shop detail — name, address, phone, website</li>
+      <li><strong>"Book appointment"</strong> button opens shop's website in an in-app browser (Safari WebView)</li>
+      <li>User completes booking on shop's own site</li>
+      <li>Back in TuneUp, user saves a reminder: service type + date → creates an appointment record</li>
+      <li>Maintenance reminder notification pauses until that date passes</li>
+    </ol>
+    <div style="margin-top:12px;padding:10px 12px;background:var(--bg);border-radius:6px;font-size:12px;color:var(--text-secondary)">
+      <strong>Note:</strong> TuneUp doesn't integrate directly with shop booking APIs — too fragmented across thousands of shops. Instead it deep-links to their site and lets the user save a local reminder. Simple and works for any shop.
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Notification silencing when appointment is scheduled</span>
+  <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;font-size:13px;color:var(--text-secondary);line-height:1.6">
+    Once an appointment is saved for a given service type, the daily reminder notification for that service is suppressed. If the appointment date passes without a log entry being created, reminders resume the next day.
+  </div>
+</div>

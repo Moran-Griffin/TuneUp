@@ -1,0 +1,38 @@
+<h2>Three approaches to building TuneUp</h2>
+<p class="subtitle">The main decision is the React Native setup — everything else (Supabase, Expo Notifications, location) stays the same</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Expo Managed Workflow ⭐ Recommended</h3>
+      <p>Full Expo setup — no Xcode config needed until App Store submission. Geofencing via <code>expo-location</code> background tasks, push notifications via Expo Push Service (wraps Apple APNs).</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Fastest to get running on your phone</li><li>OTA updates (no App Store re-review for JS changes)</li><li>Location + notifications both well-supported</li><li>Great TypeScript support</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Background geofencing requires a dev build (not Expo Go)</li><li>Some advanced native APIs require ejecting</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Expo Bare Workflow</h3>
+      <p>Start with Expo but with full access to native iOS code from day one. More control, but requires Xcode setup upfront.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>No ejection surprise later</li><li>Can use any native module immediately</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More initial setup than managed</li><li>Loses some Expo convenience tooling</li><li>Overkill for this project's requirements</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>React Native CLI (no Expo)</h3>
+      <p>Raw React Native — full native control, but you configure everything yourself: push notifications, location permissions, background tasks.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>No Expo dependency</li><li>Maximum control</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Significantly more boilerplate</li><li>Xcode config required immediately</li><li>Slower to get to a working app</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

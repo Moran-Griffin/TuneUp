@@ -1,0 +1,56 @@
+<h2>Technical architecture summary</h2>
+<p class="subtitle">Full picture of how the pieces fit together</p>
+
+<div class="section">
+  <span class="label">Tech stack</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:150px">
+      <div style="font-weight:600;margin-bottom:4px">Frontend</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">Expo (Managed) + React Native<br>TypeScript<br>Expo Router (file-based nav)<br>NativeWind (Tailwind for RN)</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:150px">
+      <div style="font-weight:600;margin-bottom:4px">Backend</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">Supabase<br>— Auth (email/password)<br>— Postgres DB<br>— Edge Functions (cron)<br>— Row Level Security</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:150px">
+      <div style="font-weight:600;margin-bottom:4px">Notifications</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">Expo Push Service → APNs<br>expo-notifications<br>expo-location (background geofencing)</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:150px">
+      <div style="font-weight:600;margin-bottom:4px">Maps / Places</div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.7">Apple MapKit (shop search)<br>expo-location (geofence)<br>expo-web-browser (in-app booking)</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Booking return flow (updated per your feedback)</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:8px">
+    <ol style="margin:0;padding-left:16px;font-size:13px;line-height:2;color:var(--text-secondary)">
+      <li>User taps "Book appointment" → <code>expo-web-browser</code> opens shop site</li>
+      <li>User books on shop's site, closes browser</li>
+      <li>App returns to foreground — detects browser closed</li>
+      <li>Modal appears: <strong>"Did you schedule an appointment?"</strong> [Yes / No]</li>
+      <li><strong>Yes →</strong> prompt for service type, date, time → saves appointment → pauses reminders</li>
+      <li><strong>No →</strong> dismiss modal → daily reminders continue</li>
+    </ol>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Key constraints & decisions</span>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+    <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:200px;font-size:13px;color:var(--text-secondary);line-height:1.7">
+      <strong style="color:var(--text)">Background location</strong><br>
+      Requires user to grant "Always" permission. iOS will ask twice — once for "While Using", once to upgrade to "Always". App should explain the value clearly during onboarding.
+    </div>
+    <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:200px;font-size:13px;color:var(--text-secondary);line-height:1.7">
+      <strong style="color:var(--text)">Dev build required</strong><br>
+      Background tasks and push notifications don't work in Expo Go. A dev build (via EAS Build or local Xcode) is needed to test the full app on device.
+    </div>
+    <div style="background:var(--surface);border:1px dashed var(--border);border-radius:8px;padding:12px 16px;flex:1;min-width:200px;font-size:13px;color:var(--text-secondary);line-height:1.7">
+      <strong style="color:var(--text)">Single vehicle UI</strong><br>
+      Multi-vehicle-ready data model (vehicles table with user_id FK), but UI exposes only one vehicle per account for now.
+    </div>
+  </div>
+</div>

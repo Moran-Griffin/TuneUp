@@ -1,0 +1,6 @@
+{"type":"server-started","port":62620,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:62620","screen_dir":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/content","state_dir":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/state"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/content/notifications.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/content/appointments.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/content/architecture.html"}
+{"type":"screen-added","file":"/Users/Griff/Programming/TuneUp/.superpowers/brainstorm/53996-1774829755/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

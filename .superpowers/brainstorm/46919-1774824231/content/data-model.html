@@ -1,0 +1,62 @@
+<h2>Data model</h2>
+<p class="subtitle">How TuneUp stores everything in Supabase (Postgres). Does this look right?</p>
+
+<div class="section">
+  <span class="label">users — managed by Supabase Auth</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;font-size:13px;font-family:monospace;line-height:1.8">
+    id (uuid, PK)<br>
+    email<br>
+    created_at
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">vehicles — one per user for now, multi-vehicle-ready</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;font-size:13px;font-family:monospace;line-height:1.8">
+    id (uuid, PK)<br>
+    user_id (FK → users)<br>
+    make, model, year<br>
+    current_mileage<br>
+    last_oil_change_date<br>
+    last_oil_change_mileage<br>
+    oil_change_interval_miles <span style="color:var(--text-secondary);font-family:sans-serif">(default 5000)</span><br>
+    last_inspection_date<br>
+    inspection_interval_months <span style="color:var(--text-secondary);font-family:sans-serif">(default 12)</span><br>
+    created_at
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">maintenance_logs — full service history</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;font-size:13px;font-family:monospace;line-height:1.8">
+    id (uuid, PK)<br>
+    vehicle_id (FK → vehicles)<br>
+    user_id (FK → users)<br>
+    type <span style="color:var(--text-secondary);font-family:sans-serif">(required — oil_change | inspection | tire_rotation | brake_service | battery | other)</span><br>
+    date <span style="color:var(--text-secondary);font-family:sans-serif">(required)</span><br>
+    mileage <span style="color:var(--text-secondary);font-family:sans-serif">(optional)</span><br>
+    shop_name <span style="color:var(--text-secondary);font-family:sans-serif">(optional)</span><br>
+    cost <span style="color:var(--text-secondary);font-family:sans-serif">(optional)</span><br>
+    notes <span style="color:var(--text-secondary);font-family:sans-serif">(optional)</span><br>
+    created_at, updated_at
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">appointments — scheduled future work</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-top:8px;font-size:13px;font-family:monospace;line-height:1.8">
+    id (uuid, PK)<br>
+    vehicle_id (FK → vehicles)<br>
+    user_id (FK → users)<br>
+    shop_name<br>
+    shop_booking_url <span style="color:var(--text-secondary);font-family:sans-serif">(deep-link target)</span><br>
+    scheduled_date<br>
+    service_type <span style="color:var(--text-secondary);font-family:sans-serif">(oil_change | inspection | etc.)</span><br>
+    status <span style="color:var(--text-secondary);font-family:sans-serif">(scheduled | completed | cancelled)</span><br>
+    created_at
+  </div>
+</div>
+
+<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:13px">
+  <strong>Key logic:</strong> When a <code>maintenance_log</code> entry of type <code>oil_change</code> or <code>inspection</code> is saved, it automatically updates the corresponding fields on the <code>vehicles</code> row — resetting the reminder clock and silencing the notification.
+</div>

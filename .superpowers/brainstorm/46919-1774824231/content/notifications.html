@@ -1,0 +1,62 @@
+<h2>Notification engine</h2>
+<p class="subtitle">Two distinct notification systems — location-triggered and schedule-triggered</p>
+
+<div class="section">
+  <span class="label">1. Location-based detection</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:8px">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:600;margin-bottom:8px">How it works</div>
+        <ol style="margin:0;padding-left:16px;font-size:13px;line-height:1.8;color:var(--text-secondary)">
+          <li><code>expo-location</code> background task monitors GPS</li>
+          <li>App detects user enters a geofence around known auto shop / dealership categories (using Apple Maps POI categories)</li>
+          <li>A timer starts — if user stays 5+ minutes, a local notification fires</li>
+          <li>"You've been at [place name] for a bit — getting work done?"</li>
+          <li>Tapping opens the quick-add log entry screen</li>
+          <li>If user ignores or leaves, timer resets — no spam</li>
+        </ol>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;margin-bottom:8px">Place detection strategy</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">
+          Uses <strong>iOS region monitoring</strong> (circular geofences) via <code>expo-location</code>. Place category matching done via <strong>Apple Maps / MapKit</strong> — no third-party API needed.<br><br>
+          <em>Requires "Always" location permission from user.</em>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">2. Maintenance reminders (persistent until resolved)</span>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:8px">
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;margin-bottom:8px">Trigger logic</div>
+        <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary);line-height:1.8">
+          <li><strong>Oil change:</strong> due when mileage within 500mi of interval, or date ≥ 6 months since last</li>
+          <li><strong>Inspection:</strong> due 30 days before anniversary of last inspection</li>
+          <li>Notification fires once per day if overdue</li>
+        </ul>
+      </div>
+
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;margin-bottom:8px">How it's silenced</div>
+        <ul style="margin:0;padding-left:16px;font-size:13px;color:var(--text-secondary);line-height:1.8">
+          <li>User logs the completed work → resets vehicle record → no more notification</li>
+          <li>User schedules an appointment → notification pauses until appointment date passes</li>
+          <li>No other way to dismiss (by design)</li>
+        </ul>
+      </div>
+
+      <div style="flex:1;min-width:180px">
+        <div style="font-weight:600;margin-bottom:8px">Implementation</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.6">
+          Supabase Edge Function runs on a daily cron. Checks all vehicles, schedules local push notifications via <strong>Expo Push Service → APNs</strong>. No always-on background process needed.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

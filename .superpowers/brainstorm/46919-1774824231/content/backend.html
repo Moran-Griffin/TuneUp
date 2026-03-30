@@ -1,0 +1,38 @@
+<h2>Backend preference?</h2>
+<p class="subtitle">TuneUp needs user accounts, vehicle data, and push notifications — the backend drives all of this</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Supabase</h3>
+      <p>Postgres database + auth + storage, all hosted. Great TypeScript support, generous free tier, open-source. My recommendation for this project.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Real SQL, easy to query</li><li>Built-in auth & row-level security</li><li>Works great with React Native</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Less mobile-specific than Firebase</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Firebase</h3>
+      <p>Google's BaaS — Firestore NoSQL database, auth, and cloud messaging (push notifications built-in).</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Push notifications (FCM) built-in</li><li>Strong React Native ecosystem</li><li>Familiar to many devs</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>NoSQL can get messy for relational data</li><li>Google can change pricing/terms</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Custom Node/Express API</h3>
+      <p>Build your own backend — full control, but significantly more work.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pros</h4><ul><li>Total control over logic</li><li>Easier to customize notification engine</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Auth, DB hosting, push infra all DIY</li><li>Much more to build and maintain</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
