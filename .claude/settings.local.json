@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(node -e \"const p = require\\(''/Users/Griff/Programming/TuneUp/package.json''\\); const deps = {...p.dependencies, ...p.devDependencies}; const check = [''expo-router'',''expo-location'',''expo-notifications'',''expo-task-manager'',''expo-secure-store'',''expo-web-browser'',''@supabase/supabase-js'',''react-native-maps'',''nativewind'',''tailwindcss'',''jest-expo'',''@testing-library/react-native'']; check.forEach\\(d => console.log\\(d + '': '' + \\(deps[d] ? deps[d] : ''MISSING''\\)\\)\\)\")",
+      "Bash(ls \"/Users/Griff/Programming/TuneUp/app/\\(auth\\)/\")",
+      "Bash(ls \"/Users/Griff/Programming/TuneUp/app/\\(tabs\\)/\")",
+      "Bash(node -e \"const jest = require\\(''/Users/Griff/Programming/TuneUp/node_modules/jest-circus''\\); console.log\\(''ok''\\)\")",
+      "Bash(node -e \":*)",
+      "Bash(git -C /Users/Griff/Programming/TuneUp show 10567e4 --stat)"
+    ]
+  }
+}
