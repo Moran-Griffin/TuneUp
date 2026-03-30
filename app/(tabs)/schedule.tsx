@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
@@ -20,6 +20,10 @@ export default function ScheduleScreen() {
   const { results, loading: searchLoading, searchNearby } = useShopSearch();
 
   async function handleFindShops() {
+    if (results.length > 0) {
+      setActiveTab('shops');
+      return;
+    }
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return;
     const loc = await Location.getCurrentPositionAsync({});

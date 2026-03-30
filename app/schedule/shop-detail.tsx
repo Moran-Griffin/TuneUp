@@ -1,17 +1,15 @@
-import { useRef } from 'react';
-import { View, Text, TouchableOpacity, Linking, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, Linking } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { MapPin, Globe } from 'lucide-react-native';
+import { MapPin } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Shop } from '@/types';
 
 export default function ShopDetailScreen() {
   const { shop: shopJson } = useLocalSearchParams<{ shop: string }>();
   const shop: Shop = JSON.parse(shopJson);
-  const didOpenBrowser = useRef(false);
-
-  function handleBook() {
+  async function handleBook() {
     if (shop.website) {
-      didOpenBrowser.current = true;
+      await AsyncStorage.setItem('pendingShop', JSON.stringify(shop));
       Linking.openURL(shop.website);
     }
   }
