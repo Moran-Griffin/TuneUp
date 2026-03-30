@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
+import { useState, useEffect } from 'react';
+import { Modal, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { ServiceType } from '@/types';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
@@ -17,8 +17,20 @@ export function ScheduledAppointmentModal({ visible, shopName, shopUrl, onYes, o
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
 
+  useEffect(() => {
+    if (visible) {
+      setDate('');
+      setTime('');
+      setServiceType('oil_change');
+    }
+  }, [visible]);
+
   function handleConfirm() {
     if (!date) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      Alert.alert('Invalid Date', 'Please enter date as YYYY-MM-DD (e.g. 2026-04-15).');
+      return;
+    }
     onYes({ service_type: serviceType, scheduled_date: date, scheduled_time: time });
   }
 

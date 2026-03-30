@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,14 +39,22 @@ export default function RootLayout() {
   }, []);
 
   async function handleAppointmentYes(data: { service_type: ServiceType; scheduled_date: string; scheduled_time: string }) {
-    setModalVisible(false);
-    if (!pendingShop.current) return;
-    await addAppointment({
-      shop_name: pendingShop.current.name,
-      shop_url: pendingShop.current.website,
-      ...data,
-    });
-    pendingShop.current = null;
+    if (!pendingShop.current || !vehicle?.id) {
+      setModalVisible(false);
+      pendingShop.current = null;
+      return;
+    }
+    try {
+      await addAppointment({
+        shop_name: pendingShop.current.name,
+        shop_url: pendingShop.current.website,
+        ...data,
+      });
+      setModalVisible(false);
+      pendingShop.current = null;
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Failed to save appointment. Please try again.');
+    }
   }
 
   return (
