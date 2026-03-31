@@ -68,17 +68,22 @@ export async function startLocationTracking(): Promise<boolean> {
   const already = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME).catch(() => false);
   if (already) return true;
 
-  await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-    accuracy: Location.Accuracy.Balanced,
-    timeInterval: 60_000,
-    distanceInterval: 50,
-    showsBackgroundLocationIndicator: true,
-    foregroundService: {
-      notificationTitle: 'TuneUp',
-      notificationBody: 'Watching for nearby auto shops',
-      notificationColor: '#2563eb',
-    },
-  });
+  try {
+    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.Balanced,
+      timeInterval: 60_000,
+      distanceInterval: 50,
+      showsBackgroundLocationIndicator: true,
+      foregroundService: {
+        notificationTitle: 'TuneUp',
+        notificationBody: 'Watching for nearby auto shops',
+        notificationColor: '#2563eb',
+      },
+    });
+  } catch (e) {
+    console.warn('Failed to start location updates:', e);
+    return false;
+  }
 
   return true;
 }

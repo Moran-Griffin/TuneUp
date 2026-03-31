@@ -9,7 +9,6 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { ScheduledAppointmentModal } from '@/components/ScheduledAppointmentModal';
 import { registerForPushNotifications } from '@/lib/notifications';
 import { startLocationTracking } from '@/lib/locationTask';
-import '@/lib/locationTask'; // ensures TaskManager.defineTask runs at app start
 import { ServiceType, Shop } from '@/types';
 import '../global.css';
 
