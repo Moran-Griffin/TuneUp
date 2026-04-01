@@ -17,7 +17,10 @@ export function useShopSearch() {
       const res = await fetch(url);
       const data = await res.json();
       if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        throw new Error(data.error_message || 'Search failed');
+        throw new Error(`${data.status}: ${data.error_message || 'Search failed'}`);
+      }
+      if (data.status === 'ZERO_RESULTS') {
+        throw new Error('No shops found nearby. Try setting a custom location in the simulator (Features → Location → Custom Location).');
       }
       setResults(data.results ?? []);
     } catch (e: any) {

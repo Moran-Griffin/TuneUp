@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -13,9 +13,14 @@ type Filter = 'all' | ServiceType;
 
 export default function LogScreen() {
   const { session } = useAuth();
-  const { vehicle } = useVehicle(session?.user.id);
-  const { logs, loading } = useMaintenanceLogs(vehicle?.id);
+  const { vehicle, refetch: refetchVehicle } = useVehicle(session?.user.id);
+  const { logs, loading, refetch: refetchLogs } = useMaintenanceLogs(vehicle?.id);
   const [filter, setFilter] = useState<Filter>('all');
+
+  useFocusEffect(useCallback(() => {
+    refetchVehicle();
+    refetchLogs();
+  }, [refetchVehicle, refetchLogs]));
 
   const filtered = filter === 'all' ? logs : logs.filter(l => l.type === filter);
   const filterOptions: Filter[] = ['all', ...Object.keys(SERVICE_TYPE_LABELS) as ServiceType[]];
@@ -25,7 +30,7 @@ export default function LogScreen() {
       <View className="bg-white pt-16 pb-3 px-4 border-b border-gray-100">
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-2xl font-bold">Service Log</Text>
-          <TouchableOpacity onPress={() => router.push('/log/new')}>
+          <TouchableOpacity onPress={() => router.push(filter === 'all' ? '/log/new' : `/log/new?type=${filter}`)}>
             <Plus size={24} color="#2563eb" />
           </TouchableOpacity>
         </View>

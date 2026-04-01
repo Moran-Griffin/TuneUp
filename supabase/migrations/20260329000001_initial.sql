@@ -71,13 +71,29 @@ returns trigger language plpgsql security definer as $$
 begin
   if new.type = 'oil_change' then
     update public.vehicles set
-      last_oil_change_date = new.date,
-      last_oil_change_mileage = coalesce(new.mileage, last_oil_change_mileage),
-      current_mileage = coalesce(new.mileage, current_mileage)
+      last_oil_change_date = case
+        when last_oil_change_date is null or new.date >= last_oil_change_date
+        then new.date
+        else last_oil_change_date
+      end,
+      last_oil_change_mileage = case
+        when new.mileage is not null and (last_oil_change_date is null or new.date >= last_oil_change_date)
+        then new.mileage
+        else last_oil_change_mileage
+      end,
+      current_mileage = case
+        when new.mileage is not null and new.mileage > current_mileage
+        then new.mileage
+        else current_mileage
+      end
     where id = new.vehicle_id;
   elsif new.type = 'inspection' then
     update public.vehicles set
-      last_inspection_date = new.date
+      last_inspection_date = case
+        when last_inspection_date is null or new.date >= last_inspection_date
+        then new.date
+        else last_inspection_date
+      end
     where id = new.vehicle_id;
   end if;
   return new;
@@ -86,6 +102,39 @@ $$;
 create trigger sync_vehicle_after_log
   after insert or update on public.maintenance_logs
   for each row execute procedure public.sync_vehicle_on_log();
+
+create or replace function public.sync_vehicle_on_log_delete()
+returns trigger language plpgsql security definer as $$
+begin
+  if old.type = 'oil_change' then
+    update public.vehicles set
+      last_oil_change_date = (
+        select date from public.maintenance_logs
+        where vehicle_id = old.vehicle_id and type = 'oil_change'
+        order by date desc limit 1
+      ),
+      last_oil_change_mileage = (
+        select mileage from public.maintenance_logs
+        where vehicle_id = old.vehicle_id and type = 'oil_change' and mileage is not null
+        order by date desc limit 1
+      )
+    where id = old.vehicle_id;
+  elsif old.type = 'inspection' then
+    update public.vehicles set
+      last_inspection_date = (
+        select date from public.maintenance_logs
+        where vehicle_id = old.vehicle_id and type = 'inspection'
+        order by date desc limit 1
+      )
+    where id = old.vehicle_id;
+  end if;
+  return old;
+end;
+$$;
+
+create trigger sync_vehicle_after_log_delete
+  after delete on public.maintenance_logs
+  for each row execute procedure public.sync_vehicle_on_log_delete();
 
 -- Appointments
 create table public.appointments (
@@ -103,3 +152,54 @@ create table public.appointments (
 alter table public.appointments enable row level security;
 create policy "Users manage own appointments" on public.appointments
   for all using (auth.uid() = user_id);
+
+-- Emissions inspection columns
+alter table public.vehicles
+  add column if not exists emissions_enabled boolean not null default false,
+  add column if not exists last_emissions_date date,
+  add column if not exists emissions_interval_months integer not null default 24;
+
+-- Update sync trigger to handle emissions_inspection log type
+create or replace function public.sync_vehicle_on_log()
+returns trigger language plpgsql security definer as $$
+begin
+  if new.type = 'oil_change' then
+    update public.vehicles set
+      last_oil_change_date = case when last_oil_change_date is null or new.date >= last_oil_change_date then new.date else last_oil_change_date end,
+      last_oil_change_mileage = case when new.mileage is not null and (last_oil_change_date is null or new.date >= last_oil_change_date) then new.mileage else last_oil_change_mileage end,
+      current_mileage = case when new.mileage is not null and new.mileage > current_mileage then new.mileage else current_mileage end
+    where id = new.vehicle_id;
+  elsif new.type = 'inspection' then
+    update public.vehicles set
+      last_inspection_date = case when last_inspection_date is null or new.date >= last_inspection_date then new.date else last_inspection_date end
+    where id = new.vehicle_id;
+  elsif new.type = 'emissions_inspection' then
+    update public.vehicles set
+      last_emissions_date = case when last_emissions_date is null or new.date >= last_emissions_date then new.date else last_emissions_date end
+    where id = new.vehicle_id;
+  end if;
+  return new;
+end;
+$$;
+
+-- Update delete-sync trigger to handle emissions_inspection log type
+create or replace function public.sync_vehicle_on_log_delete()
+returns trigger language plpgsql security definer as $$
+begin
+  if old.type = 'oil_change' then
+    update public.vehicles set
+      last_oil_change_date = (select date from public.maintenance_logs where vehicle_id = old.vehicle_id and type = 'oil_change' order by date desc limit 1),
+      last_oil_change_mileage = (select mileage from public.maintenance_logs where vehicle_id = old.vehicle_id and type = 'oil_change' and mileage is not null order by date desc limit 1)
+    where id = old.vehicle_id;
+  elsif old.type = 'inspection' then
+    update public.vehicles set
+      last_inspection_date = (select date from public.maintenance_logs where vehicle_id = old.vehicle_id and type = 'inspection' order by date desc limit 1)
+    where id = old.vehicle_id;
+  elsif old.type = 'emissions_inspection' then
+    update public.vehicles set
+      last_emissions_date = (select date from public.maintenance_logs where vehicle_id = old.vehicle_id and type = 'emissions_inspection' order by date desc limit 1)
+    where id = old.vehicle_id;
+  end if;
+  return old;
+end;
+$$;

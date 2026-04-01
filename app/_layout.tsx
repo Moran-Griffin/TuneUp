@@ -22,7 +22,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loading) return;
-    if (!session) router.replace('/(auth)/welcome');
+    if (!session) {
+      router.replace('/(auth)/welcome');
+    } else {
+      router.replace('/(tabs)');
+    }
   }, [session, loading]);
 
   useEffect(() => {
@@ -61,7 +65,7 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  async function handleAppointmentYes(data: { service_type: ServiceType; scheduled_date: string; scheduled_time: string }) {
+  async function handleAppointmentYes(data: { service_type: ServiceType; scheduled_date: string; scheduled_time?: string }) {
     if (!pendingShop.current || !vehicle?.id) {
       setModalVisible(false);
       pendingShop.current = null;
@@ -75,6 +79,7 @@ export default function RootLayout() {
       });
       setModalVisible(false);
       pendingShop.current = null;
+      router.push({ pathname: '/(tabs)/schedule', params: { tab: 'appointments' } });
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to save appointment. Please try again.');
     }

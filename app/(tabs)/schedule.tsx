@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -14,15 +14,21 @@ type Tab = 'appointments' | 'shops';
 
 export default function ScheduleScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('appointments');
+  const { tab } = useLocalSearchParams<{ tab?: string }>();
   const { session } = useAuth();
   const { vehicle } = useVehicle(session?.user.id);
   const { appointments, updateAppointment, refetch } = useAppointments(vehicle?.id);
-  const { results, loading: searchLoading, searchNearby } = useShopSearch();
+  const { results, loading: searchLoading, error: searchError, searchNearby } = useShopSearch();
 
   useFocusEffect(
     useCallback(() => {
       refetch();
-    }, [refetch])
+      if (tab === 'shops') {
+        handleFindShops();
+      } else if (tab === 'appointments') {
+        setActiveTab('appointments');
+      }
+    }, [refetch, tab])
   );
 
   async function handleFindShops() {
@@ -33,7 +39,7 @@ export default function ScheduleScreen() {
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') return;
     const loc = await Location.getCurrentPositionAsync({});
-    searchNearby(loc.coords.latitude, loc.coords.longitude);
+    await searchNearby(loc.coords.latitude, loc.coords.longitude);
     setActiveTab('shops');
   }
 
@@ -70,6 +76,7 @@ export default function ScheduleScreen() {
                   { text: 'Cancel Appointment', style: 'destructive', onPress: async () => {
                     try {
                       await updateAppointment(item.id, 'cancelled');
+                      refetch();
                     } catch (e: any) {
                       Alert.alert('Error', e.message ?? 'Something went wrong.');
                     }
@@ -77,16 +84,22 @@ export default function ScheduleScreen() {
                 ]);
               }}
               onComplete={() => {
-                Alert.alert('Mark Complete', 'Mark this appointment as done?', [
-                  { text: 'Not yet', style: 'cancel' },
-                  { text: 'Mark Complete', onPress: async () => {
+                Alert.prompt(
+                  'Mark Complete',
+                  'Enter your current mileage (optional)',
+                  async (value) => {
+                    const mileage = value ? parseInt(value, 10) : undefined;
                     try {
-                      await updateAppointment(item.id, 'completed');
+                      await updateAppointment(item.id, 'completed', mileage && !isNaN(mileage) ? mileage : undefined);
+                      refetch();
                     } catch (e: any) {
                       Alert.alert('Error', e.message ?? 'Something went wrong.');
                     }
-                  }},
-                ]);
+                  },
+                  'plain-text',
+                  '',
+                  'numeric'
+                );
               }}
             />
           )}
@@ -100,6 +113,10 @@ export default function ScheduleScreen() {
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#2563eb" />
         </View>
+      ) : searchError ? (
+        <View className="flex-1 items-center justify-center px-8">
+          <Text className="text-red-400 text-center">{searchError}</Text>
+        </View>
       ) : (
         <FlatList
           data={results}
@@ -110,6 +127,11 @@ export default function ScheduleScreen() {
               onPress={() => router.push({ pathname: '/schedule/shop-detail', params: { shop: JSON.stringify(item) } })}
             />
           )}
+          ListEmptyComponent={
+            <View className="items-center justify-center px-8 pt-16">
+              <Text className="text-gray-400 text-center">Tap "Find a Shop" to search nearby.</Text>
+            </View>
+          }
         />
       )}
     </View>

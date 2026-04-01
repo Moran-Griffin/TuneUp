@@ -3,6 +3,21 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'reac
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
+function Field({ label, value, onChangeText, placeholder, keyboardType = 'default' }: any) {
+  return (
+    <View className="mb-4">
+      <Text className="text-sm font-medium text-gray-600 mb-1">{label}</Text>
+      <TextInput
+        className="border border-gray-300 rounded-xl px-4 py-3 text-base"
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+      />
+    </View>
+  );
+}
+
 export default function VehicleSetupScreen() {
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
@@ -37,19 +52,6 @@ export default function VehicleSetupScreen() {
     if (error) { Alert.alert('Error', error.message); return; }
     router.replace('/(tabs)');
   }
-
-  const Field = ({ label, value, onChangeText, placeholder, keyboardType = 'default' }: any) => (
-    <View className="mb-4">
-      <Text className="text-sm font-medium text-gray-600 mb-1">{label}</Text>
-      <TextInput
-        className="border border-gray-300 rounded-xl px-4 py-3 text-base"
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        keyboardType={keyboardType}
-      />
-    </View>
-  );
 
   return (
     <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-8">

@@ -1,16 +1,34 @@
-import { View, Text, TouchableOpacity, Linking } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MapPin } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Shop } from '@/types';
 
+const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY!;
+
 export default function ShopDetailScreen() {
   const { shop: shopJson } = useLocalSearchParams<{ shop: string }>();
   const shop: Shop = JSON.parse(shopJson);
+
+  const [website, setWebsite] = useState<string | undefined>(shop.website);
+  const [loadingDetails, setLoadingDetails] = useState(!shop.website);
+
+  useEffect(() => {
+    if (shop.website) return;
+    fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${shop.place_id}&fields=website&key=${API_KEY}`)
+      .then(r => r.json())
+      .then(data => {
+        setWebsite(data.result?.website ?? undefined);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingDetails(false));
+  }, [shop.place_id]);
+
   async function handleBook() {
-    if (shop.website) {
-      await AsyncStorage.setItem('pendingShop', JSON.stringify(shop));
-      Linking.openURL(shop.website);
+    if (website) {
+      await AsyncStorage.setItem('pendingShop', JSON.stringify({ ...shop, website }));
+      Linking.openURL(website);
     }
   }
 
@@ -35,17 +53,25 @@ export default function ShopDetailScreen() {
       </View>
 
       <View className="px-4 mt-8">
-        <TouchableOpacity
-          className="bg-blue-600 rounded-xl py-4 items-center"
-          onPress={handleBook}
-          disabled={!shop.website}
-        >
-          <Text className="text-white font-semibold text-base">
-            {shop.website ? 'Book Appointment' : 'No Website Available'}
-          </Text>
-        </TouchableOpacity>
-        {!shop.website && (
-          <Text className="text-center text-gray-400 text-sm mt-2">Call to book instead</Text>
+        {loadingDetails ? (
+          <View className="py-4 items-center">
+            <ActivityIndicator color="#2563eb" />
+          </View>
+        ) : (
+          <>
+            <TouchableOpacity
+              className="bg-blue-600 rounded-xl py-4 items-center"
+              onPress={handleBook}
+              disabled={!website}
+            >
+              <Text className="text-white font-semibold text-base">
+                {website ? 'Book Appointment' : 'No Website Available'}
+              </Text>
+            </TouchableOpacity>
+            {!website && (
+              <Text className="text-center text-gray-400 text-sm mt-2">Call to book instead</Text>
+            )}
+          </>
         )}
       </View>
     </View>

@@ -17,7 +17,7 @@ export function AppointmentItem({ appointment, onCancel, onComplete }: Props) {
         <Text className="font-semibold text-gray-900">{SERVICE_TYPE_LABELS[appointment.service_type]}</Text>
         <Text className="text-sm text-gray-500">
           {appointment.shop_name} · {appointment.scheduled_date}
-          {appointment.scheduled_time ? ` at ${appointment.scheduled_time}` : ''}
+          {appointment.scheduled_time ? ` at ${new Date(`1970-01-01T${appointment.scheduled_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}
         </Text>
       </View>
       <View className="flex-row gap-3">

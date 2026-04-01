@@ -19,6 +19,16 @@ export function useVehicle(userId: string | undefined) {
       });
   }, [userId]);
 
+  async function refetch() {
+    if (!userId) return;
+    const { data } = await supabase
+      .from('vehicles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    setVehicle(data ?? null);
+  }
+
   async function createVehicle(data: Omit<Vehicle, 'id' | 'user_id' | 'created_at'>) {
     const { data: created, error } = await supabase
       .from('vehicles')
@@ -43,5 +53,5 @@ export function useVehicle(userId: string | undefined) {
     return updated;
   }
 
-  return { vehicle, loading, createVehicle, updateVehicle };
+  return { vehicle, loading, createVehicle, updateVehicle, refetch };
 }

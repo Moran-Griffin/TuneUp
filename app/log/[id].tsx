@@ -69,7 +69,7 @@ export default function EditLogScreen() {
     ]);
   }
 
-  if (!log) return <View className="flex-1 items-center justify-center"><Text>Entry not found</Text></View>;
+  if (!log) return null;
 
   return (
     <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-8">

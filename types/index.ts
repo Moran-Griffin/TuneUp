@@ -1,6 +1,7 @@
 export type ServiceType =
   | 'oil_change'
   | 'inspection'
+  | 'emissions_inspection'
   | 'tire_rotation'
   | 'brake_service'
   | 'battery'
@@ -20,6 +21,9 @@ export interface Vehicle {
   oil_change_interval_miles: number;
   last_inspection_date: string | null;
   inspection_interval_months: number;
+  emissions_enabled: boolean;
+  last_emissions_date: string | null;
+  emissions_interval_months: number;
   created_at: string;
 }
 
@@ -53,6 +57,7 @@ export interface Appointment {
 export interface ServiceStatus {
   isDue: boolean;
   isOverdue: boolean;
+  noRecord: boolean;
   dueDate: Date | null;
   dueMileage: number | null;
   milesUntilDue: number | null;

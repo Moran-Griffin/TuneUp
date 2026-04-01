@@ -39,9 +39,25 @@ export function useAppointments(vehicleId: string | undefined) {
     return created;
   }
 
-  async function updateAppointment(id: string, status: 'completed' | 'cancelled') {
+  async function updateAppointment(id: string, status: 'completed' | 'cancelled', mileage?: number) {
     const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
     if (error) throw error;
+
+    if (status === 'completed') {
+      const appointment = appointments.find(a => a.id === id);
+      if (appointment) {
+        const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from('maintenance_logs').insert({
+          vehicle_id: appointment.vehicle_id,
+          user_id: user!.id,
+          type: appointment.service_type,
+          date: appointment.scheduled_date,
+          shop_name: appointment.shop_name,
+          mileage: mileage ?? null,
+        });
+      }
+    }
+
     setAppointments(prev => prev.filter(a => a.id !== id));
   }
 
