@@ -51,9 +51,12 @@ export function useMaintenanceLogs(vehicleId: string | undefined) {
   }
 
   async function deleteLog(id: string) {
-    const { error } = await supabase.from('maintenance_logs').delete().eq('id', id);
-    if (error) throw error;
     setLogs(prev => prev.filter(l => l.id !== id));
+    const { error } = await supabase.from('maintenance_logs').delete().eq('id', id);
+    if (error) {
+      await fetchLogs();
+      throw error;
+    }
   }
 
   return { logs, loading, addLog, updateLog, deleteLog, refetch: fetchLogs };

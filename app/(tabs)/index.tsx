@@ -43,7 +43,8 @@ export default function HomeScreen() {
   const [showEmissionsDatePicker, setShowEmissionsDatePicker] = useState(false);
   const [savingEmissions, setSavingEmissions] = useState(false);
 
-  const promptedRef = useRef(false);
+  const promptedServices = useRef<Set<string>>(new Set());
+  const prevEmissionsEnabled = useRef<boolean | undefined>(undefined);
   const promptQueue = useRef<PromptItem[]>([]);
 
   useFocusEffect(useCallback(() => {
@@ -61,27 +62,36 @@ export default function HomeScreen() {
     ]);
   }
 
-  // Build and fire the prompt queue once per session when vehicle loads
+  // Build and fire the prompt queue when vehicle loads or emissions is re-enabled
   useEffect(() => {
-    if (!vehicle || promptedRef.current) return;
+    if (!vehicle) return;
+
+    // If emissions was just re-enabled, allow re-prompting for it
+    if (prevEmissionsEnabled.current === false && vehicle.emissions_enabled) {
+      promptedServices.current.delete('emissions');
+    }
+    prevEmissionsEnabled.current = vehicle.emissions_enabled;
 
     const queue: PromptItem[] = [];
 
-    if (!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage) {
+    if (!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage && !promptedServices.current.has('oil')) {
+      promptedServices.current.add('oil');
       queue.push({
         title: 'When was your last oil change?',
         message: 'We have no oil change on record. Would you like to enter it now?',
         onEnter: () => setOilModalVisible(true),
       });
     }
-    if (!vehicle.last_inspection_date) {
+    if (!vehicle.last_inspection_date && !promptedServices.current.has('inspection')) {
+      promptedServices.current.add('inspection');
       queue.push({
         title: 'When was your last safety inspection?',
         message: 'We have no inspection on record. Would you like to enter it now?',
         onEnter: () => setInspectionModalVisible(true),
       });
     }
-    if (vehicle.emissions_enabled && !vehicle.last_emissions_date) {
+    if (vehicle.emissions_enabled && !vehicle.last_emissions_date && !promptedServices.current.has('emissions')) {
+      promptedServices.current.add('emissions');
       queue.push({
         title: 'When was your last emissions test?',
         message: 'We have no emissions test on record. Would you like to enter it now?',
@@ -90,9 +100,9 @@ export default function HomeScreen() {
     }
 
     if (queue.length === 0) return;
-    promptedRef.current = true;
-    promptQueue.current = queue;
-    showNextPrompt();
+    const wasEmpty = promptQueue.current.length === 0;
+    promptQueue.current.push(...queue);
+    if (wasEmpty) showNextPrompt();
   }, [vehicle]);
 
   async function handleSaveOilDate() {
@@ -163,6 +173,21 @@ export default function HomeScreen() {
     ...futureLogs.map(l => l.type),
   ]);
 
+  // Map service type → nearest upcoming date from appointments or future logs
+  const scheduledDates = new Map<ServiceType, string>();
+  for (const appt of appointments) {
+    const existing = scheduledDates.get(appt.service_type);
+    if (!existing || appt.scheduled_date < existing) {
+      scheduledDates.set(appt.service_type, appt.scheduled_date);
+    }
+  }
+  for (const log of futureLogs) {
+    const existing = scheduledDates.get(log.type);
+    if (!existing || log.date < existing) {
+      scheduledDates.set(log.type, log.date);
+    }
+  }
+
   return (
     <>
       <ScrollView className="flex-1 bg-gray-50">
@@ -180,6 +205,7 @@ export default function HomeScreen() {
             onNoRecord={!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage ? () => setOilModalVisible(true) : undefined}
             noRecordLabel="Log Oil Change Date"
             isScheduled={scheduledTypes.has('oil_change')}
+            scheduledDate={scheduledDates.get('oil_change')}
           />
           <ServiceDueCard
             title="Safety Inspection"
@@ -188,6 +214,7 @@ export default function HomeScreen() {
             onNoRecord={!vehicle.last_inspection_date ? () => setInspectionModalVisible(true) : undefined}
             noRecordLabel="Log Inspection Date"
             isScheduled={scheduledTypes.has('inspection')}
+            scheduledDate={scheduledDates.get('inspection')}
           />
           {vehicle.emissions_enabled && emissionsStatus && (
             <ServiceDueCard
@@ -196,6 +223,7 @@ export default function HomeScreen() {
               onSchedule={() => router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } })}
               onNoRecord={!vehicle.last_emissions_date ? () => setEmissionsModalVisible(true) : undefined}
               isScheduled={scheduledTypes.has('emissions_inspection')}
+              scheduledDate={scheduledDates.get('emissions_inspection')}
               noRecordLabel="Log Emissions Date"
             />
           )}

@@ -28,7 +28,8 @@ export function getOilChangeStatus(vehicle: Vehicle): ServiceStatus {
   let dueDate: Date | null = null;
 
   if (vehicle.last_oil_change_date) {
-    dueDate = new Date(vehicle.last_oil_change_date);
+    const [y, m, d] = vehicle.last_oil_change_date.split('-').map(Number);
+    dueDate = new Date(y, m - 1, d);
     dueDate.setMonth(dueDate.getMonth() + OIL_CHANGE_MAX_MONTHS);
     dateOverdue = now > dueDate;
   }
@@ -45,7 +46,8 @@ export function getInspectionStatus(vehicle: Vehicle): ServiceStatus {
   }
 
   const now = new Date();
-  const dueDate = new Date(vehicle.last_inspection_date);
+  const [iy, im, id] = vehicle.last_inspection_date.split('-').map(Number);
+  const dueDate = new Date(iy, im - 1, id);
   dueDate.setMonth(dueDate.getMonth() + vehicle.inspection_interval_months);
 
   const msUntilDue = dueDate.getTime() - now.getTime();
@@ -63,7 +65,8 @@ export function getEmissionsStatus(vehicle: Vehicle): ServiceStatus {
   }
 
   const now = new Date();
-  const dueDate = new Date(vehicle.last_emissions_date);
+  const [ey, em, ed] = vehicle.last_emissions_date.split('-').map(Number);
+  const dueDate = new Date(ey, em - 1, ed);
   dueDate.setMonth(dueDate.getMonth() + vehicle.emissions_interval_months);
 
   const msUntilDue = dueDate.getTime() - now.getTime();

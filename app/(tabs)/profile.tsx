@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Linking, Switch } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Lock, Unlock } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -57,6 +58,18 @@ export default function ProfileScreen() {
       setMileage(vehicle.current_mileage?.toString() ?? '');
     }
   }, [vehicle, locked]);
+
+  // Reset unsaved edits when navigating back to this screen while unlocked
+  useFocusEffect(useCallback(() => {
+    if (!vehicle || locked) return;
+    setMake(vehicle.make ?? '');
+    setModel(vehicle.model ?? '');
+    setYear(vehicle.year ?? '');
+    setMileage(vehicle.current_mileage?.toString() ?? '');
+    setOilChangeInterval(vehicle.oil_change_interval_miles?.toString() ?? '5000');
+    setInspectionInterval(vehicle.inspection_interval_months?.toString() ?? '12');
+    setEmissionsInterval(vehicle.emissions_interval_months?.toString() ?? '24');
+  }, [vehicle, locked]));
 
   function handleLockToggle() {
     if (locked) {

@@ -88,9 +88,17 @@ export default function ScheduleScreen() {
                   'Mark Complete',
                   'Enter your current mileage (optional)',
                   async (value) => {
-                    const mileage = value ? parseInt(value, 10) : undefined;
+                    const parsed = value ? parseInt(value, 10) : undefined;
+                    const mileage = parsed && !isNaN(parsed) ? parsed : undefined;
+                    if (mileage !== undefined && vehicle && mileage < vehicle.current_mileage) {
+                      Alert.alert(
+                        'Check Mileage',
+                        `${mileage.toLocaleString()} mi is less than your current mileage of ${vehicle.current_mileage.toLocaleString()} mi. Please enter your actual current mileage.`
+                      );
+                      return;
+                    }
                     try {
-                      await updateAppointment(item.id, 'completed', mileage && !isNaN(mileage) ? mileage : undefined);
+                      await updateAppointment(item.id, 'completed', mileage);
                       refetch();
                     } catch (e: any) {
                       Alert.alert('Error', e.message ?? 'Something went wrong.');
