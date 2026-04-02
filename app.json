@@ -13,14 +13,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "platforms": ["ios"],
+    "platforms": [
+      "ios"
+    ],
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.yourname.tuneup",
       "infoPlist": {
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TuneUp detects when you're at an auto shop so you can quickly log service.",
         "NSLocationWhenInUseUsageDescription": "TuneUp uses your location to find nearby shops.",
-        "NSLocationAlwaysUsageDescription": "TuneUp runs in the background to detect auto shop visits."
+        "NSLocationAlwaysUsageDescription": "TuneUp runs in the background to detect auto shop visits.",
+        "UIBackgroundModes": ["location"]
       }
     },
     "plugins": [
@@ -38,6 +41,13 @@
           "color": "#ffffff"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9cc2344b-722e-4c24-ba45-60ae0364a033"
+      }
+    },
+    "owner": "griffm1"
   }
 }

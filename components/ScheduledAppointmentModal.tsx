@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { ServiceType } from '@/types';
@@ -26,6 +27,7 @@ function toTimeString24hr(d: Date): string {
 }
 
 export function ScheduledAppointmentModal({ visible, shopName, shopUrl, onYes, onNo }: Props) {
+  const { colorScheme: scheme } = useColorScheme();
   const [serviceType, setServiceType] = useState<ServiceType>('oil_change');
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -50,28 +52,35 @@ export function ScheduledAppointmentModal({ visible, shopName, shopUrl, onYes, o
     });
   }
 
+  const pickerStyle = scheme === 'dark' ? { color: '#ffffff', backgroundColor: '#2c2c2e' } : {};
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View className="flex-1 justify-end bg-black/40">
-        <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
-          <Text className="text-xl font-bold mb-1">Did you schedule an appointment?</Text>
-          <Text className="text-gray-500 mb-6">at {shopName}</Text>
+        <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+          <Text className="text-xl font-bold dark:text-white mb-1">Did you schedule an appointment?</Text>
+          <Text className="text-gray-500 dark:text-[#8e8e93] mb-6">at {shopName}</Text>
 
-          <Text className="text-sm font-medium text-gray-600 mb-1">Service Type</Text>
-          <View className="border border-gray-300 rounded-xl mb-4">
-            <Picker selectedValue={serviceType} onValueChange={(v) => setServiceType(v as ServiceType)}>
+          <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Service Type</Text>
+          <View className="border border-gray-300 dark:border-[#3a3a3c] rounded-xl mb-4 dark:bg-[#2c2c2e]">
+            <Picker
+              selectedValue={serviceType}
+              onValueChange={(v) => setServiceType(v as ServiceType)}
+              style={pickerStyle}
+              itemStyle={scheme === 'dark' ? { color: '#ffffff' } : {}}
+            >
               {(Object.entries(SERVICE_TYPE_LABELS) as [ServiceType, string][]).map(([value, label]) => (
                 <Picker.Item key={value} label={label} value={value} />
               ))}
             </Picker>
           </View>
 
-          <Text className="text-sm font-medium text-gray-600 mb-1">Date *</Text>
+          <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date *</Text>
           <TouchableOpacity
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
             onPress={() => { setShowDatePicker(!showDatePicker); setShowTimePicker(false); }}
           >
-            <Text className="text-base text-gray-900">{toDateString(date)}</Text>
+            <Text className="text-base text-gray-900 dark:text-white">{toDateString(date)}</Text>
           </TouchableOpacity>
           {showDatePicker && (
             <DateTimePicker
@@ -84,12 +93,12 @@ export function ScheduledAppointmentModal({ visible, shopName, shopUrl, onYes, o
           )}
           <View className="mb-4" />
 
-          <Text className="text-sm font-medium text-gray-600 mb-1">Time (optional)</Text>
+          <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Time (optional)</Text>
           <TouchableOpacity
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
             onPress={() => { setShowTimePicker(!showTimePicker); setShowDatePicker(false); }}
           >
-            <Text className={`text-base ${time ? 'text-gray-900' : 'text-gray-400'}`}>
+            <Text className={`text-base ${time ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-[#636366]'}`}>
               {time ? toTimeString12hr(time) : 'Tap to select a time'}
             </Text>
           </TouchableOpacity>
@@ -110,7 +119,7 @@ export function ScheduledAppointmentModal({ visible, shopName, shopUrl, onYes, o
             <Text className="text-white font-semibold text-base">Yes, save appointment</Text>
           </TouchableOpacity>
           <TouchableOpacity className="items-center" onPress={onNo}>
-            <Text className="text-gray-500">No, not yet</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93]">No, not yet</Text>
           </TouchableOpacity>
         </View>
       </View>

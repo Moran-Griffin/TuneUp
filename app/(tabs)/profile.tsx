@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Linking, Switch } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
+import { useColorScheme } from 'nativewind';
 import { Lock, Unlock } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
@@ -8,9 +10,9 @@ import { useVehicle } from '@/hooks/useVehicle';
 function Field({ label, value, onChangeText, keyboardType = 'default', locked }: any) {
   return (
     <View className="mb-4">
-      <Text className="text-sm font-medium text-gray-600 mb-1">{label}</Text>
+      <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">{label}</Text>
       <TextInput
-        className={`border rounded-xl px-4 py-3 text-base ${locked ? 'border-gray-200 bg-gray-50 text-gray-400' : 'border-gray-300 text-gray-900'}`}
+        className={`border rounded-xl px-4 py-3 text-base ${locked ? 'border-gray-200 dark:border-[#3a3a3c] bg-gray-50 dark:bg-[#1c1c1e] text-gray-400 dark:text-[#636366]' : 'border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#1c1c1e] text-gray-900 dark:text-white'}`}
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
@@ -25,8 +27,16 @@ function vehicleIsComplete(make: string, model: string, year: string, mileage: s
 }
 
 export default function ProfileScreen() {
+  const { colorScheme, setColorScheme } = useColorScheme();
+  const scheme = colorScheme;
   const { session, signOut } = useAuth();
-  const { vehicle, updateVehicle, createVehicle } = useVehicle(session?.user.id);
+
+  async function handleThemeToggle(value: boolean) {
+    const next = value ? 'dark' : 'light';
+    setColorScheme(next);
+    await AsyncStorage.setItem('colorScheme', next);
+  }
+  const { vehicle, updateVehicle, createVehicle, deleteVehicle } = useVehicle(session?.user.id);
 
   const [make, setMake] = useState(vehicle?.make ?? '');
   const [model, setModel] = useState(vehicle?.model ?? '');
@@ -96,6 +106,37 @@ export default function ProfileScreen() {
     }
   }
 
+  function handleDeleteData() {
+    Alert.alert(
+      'Delete Vehicle Data',
+      'This will permanently delete:\n\n• Your vehicle (make, model, year, mileage)\n• All service log entries\n• All scheduled appointments\n\nYour account and login will be kept — you can set up a new vehicle afterwards.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteVehicle();
+              setMake('');
+              setModel('');
+              setYear('');
+              setMileage('');
+              setOilChangeInterval('5000');
+              setInspectionInterval('12');
+              setEmissionsEnabled(false);
+              setEmissionsInterval('24');
+              setLocked(false);
+              initialized.current = false;
+            } catch (e: any) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+  }
+
   async function handleSave() {
     if (!make || !model || !year || !mileage) {
       Alert.alert('Validation', 'All fields are required.');
@@ -146,17 +187,20 @@ export default function ProfileScreen() {
   const canLock = vehicleIsComplete(make, model, year, mileage);
 
   return (
-    <ScrollView className="flex-1 bg-gray-50" contentContainerClassName="px-4 pt-16 pb-8">
-      <Text className="text-2xl font-bold mb-6">Profile</Text>
+    <View className="flex-1 bg-gray-50 dark:bg-black">
+      <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
+        <Text className="text-2xl font-bold dark:text-white">Profile</Text>
+      </View>
+    <ScrollView className="flex-1" contentContainerClassName="px-4 pt-4 pb-8">
 
-      <View className="bg-white rounded-2xl p-4 mb-4">
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="font-semibold text-gray-700">Vehicle</Text>
+          <Text className="font-semibold text-gray-700 dark:text-white">Vehicle</Text>
           {canLock && (
             <TouchableOpacity onPress={handleLockToggle} className="flex-row items-center gap-1.5">
               {locked
-                ? <><Lock size={15} color="#6b7280" /><Text className="text-sm text-gray-500">Locked</Text></>
-                : <><Unlock size={15} color="#2563eb" /><Text className="text-sm text-blue-600">Unlocked</Text></>
+                ? <><Lock size={15} color={scheme === 'dark' ? '#636366' : '#6b7280'} /><Text className="text-sm text-gray-500 dark:text-[#636366]">Locked</Text></>
+                : <><Unlock size={15} color={scheme === 'dark' ? '#0a84ff' : '#2563eb'} /><Text className="text-sm text-blue-600 dark:text-[#0a84ff]">Unlocked</Text></>
               }
             </TouchableOpacity>
           )}
@@ -178,17 +222,17 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      <View className="bg-white rounded-2xl p-4 mb-4">
-        <Text className="font-semibold text-gray-700 mb-4">Emissions Inspection</Text>
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
+        <Text className="font-semibold text-gray-700 dark:text-white mb-4">Emissions Inspection</Text>
         <View className="flex-row items-center justify-between mb-4">
           <View className="flex-1 mr-4">
-            <Text className="text-sm font-medium text-gray-900">Track Emissions Tests</Text>
-            <Text className="text-xs text-gray-500 mt-0.5">Enable if your state requires periodic emissions testing</Text>
+            <Text className="text-sm font-medium text-gray-900 dark:text-white">Track Emissions Tests</Text>
+            <Text className="text-xs text-gray-500 dark:text-[#8e8e93] mt-0.5">Enable if your state requires periodic emissions testing</Text>
           </View>
           <Switch
             value={emissionsEnabled}
             onValueChange={handleEmissionsToggle}
-            trackColor={{ false: '#d1d5db', true: '#2563eb' }}
+            trackColor={{ false: '#d1d5db', true: '#0a84ff' }}
             thumbColor="#ffffff"
           />
         </View>
@@ -203,9 +247,24 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      <View className="bg-white rounded-2xl p-4 mb-4">
-        <Text className="font-semibold text-gray-700 mb-3">Notifications</Text>
-        <Text className="text-sm text-gray-500 mb-2">
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
+        <Text className="font-semibold text-gray-700 dark:text-white mb-4">Appearance</Text>
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 mr-4">
+            <Text className="text-sm font-medium text-gray-900 dark:text-white">Dark Mode</Text>
+          </View>
+          <Switch
+            value={scheme === 'dark'}
+            onValueChange={handleThemeToggle}
+            trackColor={{ false: '#d1d5db', true: '#0a84ff' }}
+            thumbColor="#ffffff"
+          />
+        </View>
+      </View>
+
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
+        <Text className="font-semibold text-gray-700 dark:text-white mb-3">Notifications</Text>
+        <Text className="text-sm text-gray-500 dark:text-[#8e8e93] mb-2">
           Maintenance reminders and monthly mileage prompts are sent automatically.
           Location-based prompts require "Always" location permission in iOS Settings.
         </Text>
@@ -213,17 +272,26 @@ export default function ProfileScreen() {
           onPress={() => Linking.openURL('app-settings:')}
           className="mt-1"
         >
-          <Text className="text-blue-600 text-sm">Open iOS Settings →</Text>
+          <Text className="text-blue-600 dark:text-[#0a84ff] text-sm">Open iOS Settings →</Text>
         </TouchableOpacity>
       </View>
 
-      <View className="bg-white rounded-2xl p-4 mb-4">
-        <Text className="font-semibold text-gray-700 mb-2">Account</Text>
-        <Text className="text-gray-500 text-sm mb-4">{session?.user.email}</Text>
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
+        <Text className="font-semibold text-gray-700 dark:text-white mb-2">Account</Text>
+        <Text className="text-gray-500 dark:text-[#8e8e93] text-sm mb-4">{session?.user.email}</Text>
         <TouchableOpacity onPress={signOut}>
-          <Text className="text-red-500 font-medium">Sign Out</Text>
+          <Text className="text-red-500 dark:text-[#ff453a] font-medium">Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
+        <Text className="font-semibold text-gray-700 dark:text-white mb-1">Reset Vehicle Data</Text>
+        <Text className="text-xs text-gray-500 dark:text-[#8e8e93] mb-3">Usage will clear all data in your account.</Text>
+        <TouchableOpacity onPress={handleDeleteData} disabled={!vehicle}>
+          <Text className={`font-medium ${vehicle ? 'text-red-500 dark:text-[#ff453a]' : 'text-gray-300 dark:text-[#48484a]'}`}>Delete Vehicle &amp; All Data</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
+    </View>
   );
 }

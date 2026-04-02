@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView, Alert,
 } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
@@ -33,6 +34,7 @@ export default function NewLogScreen() {
   const { type: typeParam } = useLocalSearchParams<{ type?: string }>();
   const initialType: ServiceType = typeParam && VALID_TYPES.has(typeParam as ServiceType) ? (typeParam as ServiceType) : 'oil_change';
 
+  const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
   const { vehicle } = useVehicle(session?.user.id);
   const { addLog } = useMaintenanceLogs(vehicle?.id);
@@ -60,7 +62,16 @@ export default function NewLogScreen() {
   selected.setHours(0, 0, 0, 0);
   const isFuture = selected > today;
 
+  const vehicleYear = vehicle?.year ? parseInt(vehicle.year, 10) : null;
+  const minimumDate = vehicleYear ? new Date(vehicleYear, 0, 1) : undefined;
+
+  const pickerStyle = scheme === 'dark' ? { color: '#ffffff', backgroundColor: '#2c2c2e' } : {};
+
   async function handleSave() {
+    if (vehicleYear && date.getFullYear() < vehicleYear) {
+      Alert.alert('Invalid Date', `Service date cannot be before your vehicle's model year (${vehicleYear}).`);
+      return;
+    }
     if (isFuture) {
       if (!location.trim()) {
         Alert.alert('Required', 'Please enter a location for the appointment.');
@@ -102,40 +113,46 @@ export default function NewLogScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-8">
+    <ScrollView className="flex-1 bg-white dark:bg-[#1c1c1e]" contentContainerClassName="px-6 pt-16 pb-8">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <Text className="text-blue-600 text-base">Cancel</Text>
+          <Text className="text-blue-600 dark:text-[#0a84ff] text-base">Cancel</Text>
         </TouchableOpacity>
-        <Text className="text-xl font-bold flex-1">{isFuture ? 'Schedule Appointment' : 'New Entry'}</Text>
+        <Text className="text-xl font-bold dark:text-white flex-1">{isFuture ? 'Schedule Appointment' : 'New Entry'}</Text>
         <TouchableOpacity onPress={handleSave} disabled={loading}>
-          <Text className="text-blue-600 font-semibold text-base">
+          <Text className="text-blue-600 dark:text-[#0a84ff] font-semibold text-base">
             {loading ? 'Saving...' : isFuture ? 'Schedule' : 'Save'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <Text className="text-sm font-medium text-gray-600 mb-1">Service Type *</Text>
-      <View className="border border-gray-300 rounded-xl mb-4">
-        <Picker selectedValue={type} onValueChange={(v) => setType(v as ServiceType)}>
+      <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Service Type *</Text>
+      <View className="border border-gray-300 dark:border-[#3a3a3c] rounded-xl mb-4 dark:bg-[#2c2c2e]">
+        <Picker
+          selectedValue={type}
+          onValueChange={(v) => setType(v as ServiceType)}
+          style={pickerStyle}
+          itemStyle={scheme === 'dark' ? { color: '#ffffff' } : {}}
+        >
           {(Object.entries(SERVICE_TYPE_LABELS) as [ServiceType, string][]).map(([value, label]) => (
             <Picker.Item key={value} label={label} value={value} />
           ))}
         </Picker>
       </View>
 
-      <Text className="text-sm font-medium text-gray-600 mb-1">Date *</Text>
+      <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date *</Text>
       <TouchableOpacity
-        className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+        className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
         onPress={() => { setShowDatePicker(!showDatePicker); setShowTimePicker(false); }}
       >
-        <Text className="text-base text-gray-900">{toDateString(date)}</Text>
+        <Text className="text-base text-gray-900 dark:text-white">{toDateString(date)}</Text>
       </TouchableOpacity>
       {showDatePicker && (
         <DateTimePicker
           value={date}
           mode="date"
           display="spinner"
+          minimumDate={minimumDate}
           onChange={(_, selected) => { if (selected) setDate(selected); }}
         />
       )}
@@ -143,20 +160,21 @@ export default function NewLogScreen() {
 
       {isFuture ? (
         <>
-          <Text className="text-sm font-medium text-gray-600 mb-1">Location *</Text>
+          <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Location *</Text>
           <TextInput
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-base"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
             value={location}
             onChangeText={setLocation}
             placeholder="e.g. Jiffy Lube on Main St"
+            placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
           />
 
-          <Text className="text-sm font-medium text-gray-400 mb-1">Time (optional)</Text>
+          <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Time (optional)</Text>
           <TouchableOpacity
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
             onPress={() => { setShowTimePicker(!showTimePicker); setShowDatePicker(false); }}
           >
-            <Text className={`text-base ${time ? 'text-gray-900' : 'text-gray-400'}`}>
+            <Text className={`text-base ${time ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-[#636366]'}`}>
               {time ? toTimeString12hr(time) : 'Tap to select a time'}
             </Text>
           </TouchableOpacity>
@@ -171,38 +189,42 @@ export default function NewLogScreen() {
         </>
       ) : (
         <>
-          <Text className="text-sm font-medium text-gray-400 mb-1">Mileage at service (optional)</Text>
+          <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Mileage at service (optional)</Text>
           <TextInput
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-base"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
             value={mileage}
             onChangeText={setMileage}
             placeholder="e.g. 47500"
+            placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
             keyboardType="numeric"
           />
 
-          <Text className="text-sm font-medium text-gray-400 mb-1">Shop Name (optional)</Text>
+          <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Shop Name (optional)</Text>
           <TextInput
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-base"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
             value={shopName}
             onChangeText={setShopName}
             placeholder="e.g. Jiffy Lube"
+            placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
           />
 
-          <Text className="text-sm font-medium text-gray-400 mb-1">Cost (optional)</Text>
+          <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Cost (optional)</Text>
           <TextInput
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-base"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
             value={cost}
             onChangeText={setCost}
             placeholder="e.g. 49.99"
+            placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
             keyboardType="decimal-pad"
           />
 
-          <Text className="text-sm font-medium text-gray-400 mb-1">Notes (optional)</Text>
+          <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Notes (optional)</Text>
           <TextInput
-            className="border border-gray-300 rounded-xl px-4 py-3 mb-4 text-base"
+            className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
             value={notes}
             onChangeText={setNotes}
             placeholder="Any notes..."
+            placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
             multiline
             numberOfLines={3}
           />

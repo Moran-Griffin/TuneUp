@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal, Alert, TextInput } from 'react-native';
+import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useFocusEffect } from 'expo-router';
 import { Plus } from 'lucide-react-native';
@@ -19,6 +20,7 @@ function toDateString(d: Date): string {
 type PromptItem = { title: string; message: string; onEnter: () => void };
 
 export default function HomeScreen() {
+  const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
   const { vehicle, loading: vehicleLoading, refetch: refetchVehicle } = useVehicle(session?.user.id);
   const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id);
@@ -190,14 +192,14 @@ export default function HomeScreen() {
 
   return (
     <>
-      <ScrollView className="flex-1 bg-gray-50">
-        <View className="bg-white pt-16 pb-4 px-4 border-b border-gray-100">
-          <Text className="text-2xl font-bold">{vehicle.year} {vehicle.make} {vehicle.model}</Text>
-          <Text className="text-gray-500">{vehicle.current_mileage.toLocaleString()} miles</Text>
-        </View>
+      <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
+        <Text className="text-2xl font-bold dark:text-white">{vehicle.year} {vehicle.make} {vehicle.model}</Text>
+        <Text className="text-gray-500 dark:text-[#8e8e93]">{vehicle.current_mileage.toLocaleString()} miles</Text>
+      </View>
+      <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
 
         <View className="px-4 pt-4">
-          <Text className="font-semibold text-gray-700 mb-3">Service Status</Text>
+          <Text className="font-semibold text-gray-700 dark:text-[#8e8e93] mb-3">Service Status</Text>
           <ServiceDueCard
             title="Oil Change"
             status={oilStatus}
@@ -231,16 +233,22 @@ export default function HomeScreen() {
 
         <View className="px-4 pt-2 pb-8">
           <View className="flex-row items-center justify-between mb-3">
-            <Text className="font-semibold text-gray-700">Recent Service</Text>
+            <Text className="font-semibold text-gray-700 dark:text-[#8e8e93]">Recent Service</Text>
             <TouchableOpacity onPress={() => router.push('/log/new')}>
-              <Plus size={20} color="#2563eb" />
+              <Plus size={20} color={scheme === 'dark' ? '#0a84ff' : '#2563eb'} />
             </TouchableOpacity>
           </View>
           {recentLogs.length === 0 && !logsLoading ? (
-            <Text className="text-gray-400 text-center py-4">No service history yet</Text>
+            <Text className="text-gray-400 dark:text-[#636366] text-center py-4">No service history yet</Text>
           ) : (
-            recentLogs.map(log => (
-              <LogEntryItem key={log.id} log={log} onPress={() => router.push(`/log/${log.id}`)} />
+            recentLogs.map((log, i) => (
+              <LogEntryItem
+                key={log.id}
+                log={log}
+                onPress={() => router.push(`/log/${log.id}`)}
+                isFirst={i === 0}
+                isLast={i === recentLogs.length - 1}
+              />
             ))
           )}
         </View>
@@ -249,16 +257,16 @@ export default function HomeScreen() {
       {/* Oil Change Modal */}
       <Modal visible={oilModalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
-            <Text className="text-xl font-bold mb-1">Last Oil Change</Text>
-            <Text className="text-gray-500 mb-5">When was your most recent oil change?</Text>
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Last Oil Change</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">When was your most recent oil change?</Text>
 
-            <Text className="text-sm font-medium text-gray-600 mb-1">Date</Text>
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date</Text>
             <TouchableOpacity
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowOilDatePicker(!showOilDatePicker)}
             >
-              <Text className="text-base text-gray-900">{toDateString(oilDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDateString(oilDate)}</Text>
             </TouchableOpacity>
             {showOilDatePicker && (
               <DateTimePicker
@@ -271,9 +279,9 @@ export default function HomeScreen() {
             )}
             <View className="mb-3" />
 
-            <Text className="text-sm font-medium text-gray-400 mb-1">Mileage at service (optional)</Text>
+            <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Mileage at service (optional)</Text>
             <TextInput
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-6 text-base"
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-6 text-base text-gray-900 dark:text-white"
               value={oilMileage}
               onChangeText={setOilMileage}
               placeholder="e.g. 33000"
@@ -290,7 +298,7 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity className="items-center" onPress={() => { setOilModalVisible(false); showNextPrompt(); }}>
-              <Text className="text-gray-500">Skip</Text>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Skip</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -299,15 +307,15 @@ export default function HomeScreen() {
       {/* Safety Inspection Modal */}
       <Modal visible={inspectionModalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
-            <Text className="text-xl font-bold mb-1">Last Safety Inspection</Text>
-            <Text className="text-gray-500 mb-5">When was your most recent vehicle inspection?</Text>
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Last Safety Inspection</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">When was your most recent vehicle inspection?</Text>
 
             <TouchableOpacity
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowInspectionDatePicker(!showInspectionDatePicker)}
             >
-              <Text className="text-base text-gray-900">{toDateString(inspectionDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDateString(inspectionDate)}</Text>
             </TouchableOpacity>
             {showInspectionDatePicker && (
               <DateTimePicker
@@ -330,7 +338,7 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity className="items-center" onPress={() => { setInspectionModalVisible(false); showNextPrompt(); }}>
-              <Text className="text-gray-500">Skip</Text>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Skip</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -339,15 +347,15 @@ export default function HomeScreen() {
       {/* Emissions Modal */}
       <Modal visible={emissionsModalVisible} transparent animationType="slide">
         <View className="flex-1 justify-end bg-black/40">
-          <View className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
-            <Text className="text-xl font-bold mb-1">Last Emissions Test</Text>
-            <Text className="text-gray-500 mb-5">When was your most recent emissions inspection?</Text>
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Last Emissions Test</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">When was your most recent emissions inspection?</Text>
 
             <TouchableOpacity
-              className="border border-gray-300 rounded-xl px-4 py-3 mb-2"
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowEmissionsDatePicker(!showEmissionsDatePicker)}
             >
-              <Text className="text-base text-gray-900">{toDateString(emissionsDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDateString(emissionsDate)}</Text>
             </TouchableOpacity>
             {showEmissionsDatePicker && (
               <DateTimePicker
@@ -370,7 +378,7 @@ export default function HomeScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity className="items-center" onPress={() => { setEmissionsModalVisible(false); showNextPrompt(); }}>
-              <Text className="text-gray-500">Skip</Text>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Skip</Text>
             </TouchableOpacity>
           </View>
         </View>

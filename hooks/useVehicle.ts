@@ -53,5 +53,12 @@ export function useVehicle(userId: string | undefined) {
     return updated;
   }
 
-  return { vehicle, loading, createVehicle, updateVehicle, refetch };
+  async function deleteVehicle() {
+    if (!vehicle) return;
+    const { error } = await supabase.from('vehicles').delete().eq('id', vehicle.id);
+    if (error) throw error;
+    setVehicle(null);
+  }
+
+  return { vehicle, loading, createVehicle, updateVehicle, deleteVehicle, refetch };
 }

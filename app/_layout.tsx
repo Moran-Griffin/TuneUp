@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useColorScheme } from 'nativewind';
 import { Stack, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +14,15 @@ import { ServiceType, Shop } from '@/types';
 import '../global.css';
 
 export default function RootLayout() {
+  const { setColorScheme } = useColorScheme();
   const { session, loading } = useAuth();
+
+  // Restore saved color scheme preference on startup
+  useEffect(() => {
+    AsyncStorage.getItem('colorScheme').then(saved => {
+      if (saved === 'dark' || saved === 'light') setColorScheme(saved);
+    });
+  }, []);
   const { vehicle } = useVehicle(session?.user.id);
   const { addAppointment } = useAppointments(vehicle?.id);
 

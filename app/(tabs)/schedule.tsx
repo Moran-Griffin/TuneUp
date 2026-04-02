@@ -44,21 +44,21 @@ export default function ScheduleScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="bg-white pt-16 pb-4 px-4 border-b border-gray-100">
-        <Text className="text-2xl font-bold mb-3">Schedule</Text>
+    <View className="flex-1 bg-gray-50 dark:bg-black">
+      <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
+        <Text className="text-2xl font-bold dark:text-white mb-3">Schedule</Text>
         <View className="flex-row gap-2">
           <TouchableOpacity
-            className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'appointments' ? 'bg-blue-600' : 'bg-gray-100'}`}
+            className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'appointments' ? 'bg-blue-600' : 'bg-gray-100 dark:bg-[#2c2c2e]'}`}
             onPress={() => setActiveTab('appointments')}
           >
-            <Text className={activeTab === 'appointments' ? 'text-white font-medium' : 'text-gray-600'}>Appointments</Text>
+            <Text className={activeTab === 'appointments' ? 'text-white font-medium' : 'text-gray-600 dark:text-[#8e8e93]'}>Appointments</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'shops' ? 'bg-blue-600' : 'bg-gray-100'}`}
+            className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'shops' ? 'bg-blue-600' : 'bg-gray-100 dark:bg-[#2c2c2e]'}`}
             onPress={handleFindShops}
           >
-            <Text className={activeTab === 'shops' ? 'text-white font-medium' : 'text-gray-600'}>Find a Shop</Text>
+            <Text className={activeTab === 'shops' ? 'text-white font-medium' : 'text-gray-600 dark:text-[#8e8e93]'}>Find a Shop</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -67,9 +67,12 @@ export default function ScheduleScreen() {
         <FlatList
           data={appointments}
           keyExtractor={item => item.id}
-          renderItem={({ item }) => (
+          contentContainerStyle={{ paddingTop: 16 }}
+          renderItem={({ item, index }) => (
             <AppointmentItem
               appointment={item}
+              isFirst={index === 0}
+              isLast={index === appointments.length - 1}
               onCancel={() => {
                 Alert.alert('Cancel Appointment', 'Remove this appointment?', [
                   { text: 'Keep', style: 'cancel' },
@@ -113,7 +116,7 @@ export default function ScheduleScreen() {
           )}
           ListEmptyComponent={
             <View className="items-center justify-center px-8 pt-16">
-              <Text className="text-gray-400 text-center">No upcoming appointments. Find a shop to book one.</Text>
+              <Text className="text-gray-400 dark:text-[#636366] text-center">No upcoming appointments. Find a shop to book one.</Text>
             </View>
           }
         />
@@ -123,7 +126,7 @@ export default function ScheduleScreen() {
         </View>
       ) : searchError ? (
         <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-red-400 text-center">{searchError}</Text>
+          <Text className="text-red-400 dark:text-[#ff453a] text-center">{searchError}</Text>
         </View>
       ) : (
         <FlatList
@@ -137,7 +140,7 @@ export default function ScheduleScreen() {
           )}
           ListEmptyComponent={
             <View className="items-center justify-center px-8 pt-16">
-              <Text className="text-gray-400 text-center">Tap "Find a Shop" to search nearby.</Text>
+              <Text className="text-gray-400 dark:text-[#636366] text-center">Tap "Find a Shop" to search nearby.</Text>
             </View>
           }
         />
