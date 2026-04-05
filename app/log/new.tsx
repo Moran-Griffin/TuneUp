@@ -22,6 +22,13 @@ function toDateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+function toDisplayDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
+}
+
 function toTimeString12hr(d: Date): string {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
@@ -37,8 +44,8 @@ export default function NewLogScreen() {
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
   const { vehicle } = useVehicle(session?.user.id);
-  const { addLog } = useMaintenanceLogs(vehicle?.id);
-  const { addAppointment } = useAppointments(vehicle?.id);
+  const { addLog } = useMaintenanceLogs(vehicle?.id, vehicle);
+  const { addAppointment } = useAppointments(vehicle?.id, vehicle);
 
   const [type, setType] = useState<ServiceType>(initialType);
   const [date, setDate] = useState(new Date());
@@ -145,13 +152,13 @@ export default function NewLogScreen() {
         className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
         onPress={() => { setShowDatePicker(!showDatePicker); setShowTimePicker(false); }}
       >
-        <Text className="text-base text-gray-900 dark:text-white">{toDateString(date)}</Text>
+        <Text className="text-base text-gray-900 dark:text-white">{toDisplayDate(date)}</Text>
       </TouchableOpacity>
       {showDatePicker && (
         <DateTimePicker
           value={date}
           mode="date"
-          display="spinner"
+          display="inline"
           minimumDate={minimumDate}
           onChange={(_, selected) => { if (selected) setDate(selected); }}
         />
@@ -183,6 +190,7 @@ export default function NewLogScreen() {
               value={time ?? new Date()}
               mode="time"
               display="spinner"
+              is24Hour={false}
               onChange={(_, selected) => { if (selected) setTime(selected); }}
             />
           )}

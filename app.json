@@ -18,7 +18,7 @@
     ],
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.yourname.tuneup",
+      "bundleIdentifier": "com.griffnmoran.tuneup",
       "infoPlist": {
         "NSLocationAlwaysAndWhenInUseUsageDescription": "TuneUp detects when you're at an auto shop so you can quickly log service.",
         "NSLocationWhenInUseUsageDescription": "TuneUp uses your location to find nearby shops.",

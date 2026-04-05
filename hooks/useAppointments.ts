@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Appointment, ServiceType } from '@/types';
+import { Appointment, ServiceType, Vehicle } from '@/types';
+import { cancelNotificationForServiceType, scheduleMaintenanceNotifications } from '@/lib/notifications';
 
-export function useAppointments(vehicleId: string | undefined) {
+export function useAppointments(vehicleId: string | undefined, vehicle?: Vehicle | null) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,6 +37,7 @@ export function useAppointments(vehicleId: string | undefined) {
       .single();
     if (error) throw error;
     setAppointments(prev => [...prev, created]);
+    await cancelNotificationForServiceType(data.service_type);
     return created;
   }
 
@@ -52,6 +54,7 @@ export function useAppointments(vehicleId: string | undefined) {
     }
 
     setAppointments(prev => prev.filter(a => a.id !== id));
+    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch(() => {});
   }
 
   return { appointments, loading, addAppointment, updateAppointment, refetch: fetchAppointments };

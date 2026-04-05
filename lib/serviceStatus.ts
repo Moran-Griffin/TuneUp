@@ -1,7 +1,6 @@
 import { Vehicle, ServiceStatus } from '@/types';
 import {
   OIL_CHANGE_WARNING_MILES,
-  OIL_CHANGE_MAX_MONTHS,
   INSPECTION_WARNING_DAYS,
   EMISSIONS_WARNING_DAYS,
 } from '@/constants/maintenance';
@@ -30,7 +29,7 @@ export function getOilChangeStatus(vehicle: Vehicle): ServiceStatus {
   if (vehicle.last_oil_change_date) {
     const [y, m, d] = vehicle.last_oil_change_date.split('-').map(Number);
     dueDate = new Date(y, m - 1, d);
-    dueDate.setMonth(dueDate.getMonth() + OIL_CHANGE_MAX_MONTHS);
+    dueDate.setMonth(dueDate.getMonth() + vehicle.oil_change_interval_months);
     dateOverdue = now > dueDate;
   }
 

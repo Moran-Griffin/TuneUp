@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MaintenanceLog, ServiceType } from '@/types';
+import { MaintenanceLog, ServiceType, Vehicle } from '@/types';
+import { scheduleMaintenanceNotifications } from '@/lib/notifications';
+import { enqueueLog } from '@/lib/offlineQueue';
 
-export function useMaintenanceLogs(vehicleId: string | undefined) {
+export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehicle | null) {
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,8 +35,13 @@ export function useMaintenanceLogs(vehicleId: string | undefined) {
       .insert({ ...entry, vehicle_id: vehicleId, user_id: user!.id })
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      // Save to offline queue so it can be replayed on next launch
+      await enqueueLog({ ...entry, vehicle_id: vehicleId!, user_id: user!.id });
+      throw error;
+    }
     setLogs(prev => [data, ...prev]);
+    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch(() => {});
     return data;
   }
 
@@ -57,6 +64,7 @@ export function useMaintenanceLogs(vehicleId: string | undefined) {
       await fetchLogs();
       throw error;
     }
+    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch(() => {});
   }
 
   return { logs, loading, addLog, updateLog, deleteLog, refetch: fetchLogs };

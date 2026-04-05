@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useColorScheme } from 'nativewind';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,6 +9,25 @@ import { useVehicle } from '@/hooks/useVehicle';
 import { useMaintenanceLogs } from '@/hooks/useMaintenanceLogs';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
 import { ServiceType } from '@/types';
+
+function toDateString(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toDisplayDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
+}
+
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
 
 export default function EditLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -19,7 +39,8 @@ export default function EditLogScreen() {
   const log = logs.find(l => l.id === id);
 
   const [type, setType] = useState<ServiceType>(log?.type ?? 'oil_change');
-  const [date, setDate] = useState(log?.date ?? '');
+  const [date, setDate] = useState<Date>(log?.date ? parseDateString(log.date) : new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [mileage, setMileage] = useState(log?.mileage?.toString() ?? '');
   const [shopName, setShopName] = useState(log?.shop_name ?? '');
   const [cost, setCost] = useState(log?.cost?.toString() ?? '');
@@ -29,7 +50,7 @@ export default function EditLogScreen() {
   useEffect(() => {
     if (log) {
       setType(log.type);
-      setDate(log.date);
+      setDate(parseDateString(log.date));
       setMileage(log.mileage?.toString() ?? '');
       setShopName(log.shop_name ?? '');
       setCost(log.cost?.toString() ?? '');
@@ -38,12 +59,11 @@ export default function EditLogScreen() {
   }, [log]);
 
   async function handleSave() {
-    if (!date) { Alert.alert('Error', 'Date is required.'); return; }
     setLoading(true);
     try {
       await updateLog(id, {
         type,
-        date,
+        date: toDateString(date),
         mileage: mileage ? parseInt(mileage, 10) : null,
         shop_name: shopName || null,
         cost: cost ? parseFloat(cost) : null,
@@ -102,13 +122,22 @@ export default function EditLogScreen() {
       </View>
 
       <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date *</Text>
-      <TextInput
-        className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
-        value={date}
-        onChangeText={setDate}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={scheme === 'dark' ? '#636366' : '#9ca3af'}
-      />
+      <TouchableOpacity
+        className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
+        onPress={() => setShowDatePicker(!showDatePicker)}
+      >
+        <Text className="text-base text-gray-900 dark:text-white">{toDisplayDate(date)}</Text>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="inline"
+          maximumDate={new Date()}
+          onChange={(_, selected) => { if (selected) setDate(selected); }}
+        />
+      )}
+      <View className="mb-3" />
 
       <Text className="text-sm font-medium text-gray-400 dark:text-[#636366] mb-1">Mileage (optional)</Text>
       <TextInput

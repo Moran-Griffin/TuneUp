@@ -4,6 +4,11 @@ import { MaintenanceLog } from '@/types';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
 import { ChevronRight } from 'lucide-react-native';
 
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-');
+  return `${m}/${d}/${y}`;
+}
+
 interface Props {
   log: MaintenanceLog;
   onPress: () => void;
@@ -25,7 +30,7 @@ export function LogEntryItem({ log, onPress, isFirst, isLast }: Props) {
       <View className="flex-1">
         <Text className="font-semibold text-gray-900 dark:text-white">{SERVICE_TYPE_LABELS[log.type]}</Text>
         <Text className="text-sm text-gray-500 dark:text-[#8e8e93]">
-          {log.date}{log.mileage ? ` · ${log.mileage.toLocaleString()} mi` : ''}{log.shop_name ? ` · ${log.shop_name}` : ''}
+          {formatDate(log.date)}{log.mileage ? ` · ${log.mileage.toLocaleString()} mi` : ''}{log.shop_name ? ` · ${log.shop_name}` : ''}
         </Text>
         {log.cost ? <Text className="text-sm text-gray-400 dark:text-[#636366]">${log.cost.toFixed(2)}</Text> : null}
       </View>

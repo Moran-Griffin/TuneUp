@@ -4,6 +4,11 @@ import { Appointment } from '@/types';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
 import { Calendar } from 'lucide-react-native';
 
+function formatDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-');
+  return `${m}/${d}/${y}`;
+}
+
 interface Props {
   appointment: Appointment;
   onCancel?: () => void;
@@ -23,7 +28,7 @@ export function AppointmentItem({ appointment, onCancel, onComplete, isFirst, is
       <View className="flex-1 ml-3">
         <Text className="font-semibold text-gray-900 dark:text-white">{SERVICE_TYPE_LABELS[appointment.service_type]}</Text>
         <Text className="text-sm text-gray-500 dark:text-[#8e8e93]">
-          {appointment.shop_name} · {appointment.scheduled_date}
+          {appointment.shop_name} · {formatDate(appointment.scheduled_date)}
           {appointment.scheduled_time ? ` at ${new Date(`1970-01-01T${appointment.scheduled_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}
         </Text>
       </View>

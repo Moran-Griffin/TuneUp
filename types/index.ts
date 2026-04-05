@@ -19,6 +19,7 @@ export interface Vehicle {
   last_oil_change_date: string | null;
   last_oil_change_mileage: number | null;
   oil_change_interval_miles: number;
+  oil_change_interval_months: number;
   last_inspection_date: string | null;
   inspection_interval_months: number;
   emissions_enabled: boolean;

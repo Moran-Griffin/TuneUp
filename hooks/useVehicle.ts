@@ -29,7 +29,7 @@ export function useVehicle(userId: string | undefined) {
     setVehicle(data ?? null);
   }
 
-  async function createVehicle(data: Omit<Vehicle, 'id' | 'user_id' | 'created_at'>) {
+  async function createVehicle(data: Partial<Omit<Vehicle, 'id' | 'user_id' | 'created_at'>>) {
     const { data: created, error } = await supabase
       .from('vehicles')
       .insert({ ...data, user_id: userId })

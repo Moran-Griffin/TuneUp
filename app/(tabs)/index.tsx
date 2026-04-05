@@ -14,7 +14,17 @@ import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/l
 import { ServiceType } from '@/types';
 
 function toDateString(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function toDisplayDate(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const y = d.getFullYear();
+  return `${m}/${day}/${y}`;
 }
 
 type PromptItem = { title: string; message: string; onEnter: () => void };
@@ -23,7 +33,7 @@ export default function HomeScreen() {
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
   const { vehicle, loading: vehicleLoading, refetch: refetchVehicle } = useVehicle(session?.user.id);
-  const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id);
+  const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id, vehicle);
   const { appointments, refetch: refetchAppointments } = useAppointments(vehicle?.id);
 
   // Oil change modal
@@ -266,13 +276,13 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowOilDatePicker(!showOilDatePicker)}
             >
-              <Text className="text-base text-gray-900 dark:text-white">{toDateString(oilDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDisplayDate(oilDate)}</Text>
             </TouchableOpacity>
             {showOilDatePicker && (
               <DateTimePicker
                 value={oilDate}
                 mode="date"
-                display="spinner"
+                display="inline"
                 onChange={(_, selected) => { if (selected) setOilDate(selected); }}
                 maximumDate={new Date()}
               />
@@ -315,13 +325,13 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowInspectionDatePicker(!showInspectionDatePicker)}
             >
-              <Text className="text-base text-gray-900 dark:text-white">{toDateString(inspectionDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDisplayDate(inspectionDate)}</Text>
             </TouchableOpacity>
             {showInspectionDatePicker && (
               <DateTimePicker
                 value={inspectionDate}
                 mode="date"
-                display="spinner"
+                display="inline"
                 onChange={(_, selected) => { if (selected) setInspectionDate(selected); }}
                 maximumDate={new Date()}
               />
@@ -355,13 +365,13 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => setShowEmissionsDatePicker(!showEmissionsDatePicker)}
             >
-              <Text className="text-base text-gray-900 dark:text-white">{toDateString(emissionsDate)}</Text>
+              <Text className="text-base text-gray-900 dark:text-white">{toDisplayDate(emissionsDate)}</Text>
             </TouchableOpacity>
             {showEmissionsDatePicker && (
               <DateTimePicker
                 value={emissionsDate}
                 mode="date"
-                display="spinner"
+                display="inline"
                 onChange={(_, selected) => { if (selected) setEmissionsDate(selected); }}
                 maximumDate={new Date()}
               />

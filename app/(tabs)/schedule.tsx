@@ -17,7 +17,7 @@ export default function ScheduleScreen() {
   const { tab } = useLocalSearchParams<{ tab?: string }>();
   const { session } = useAuth();
   const { vehicle } = useVehicle(session?.user.id);
-  const { appointments, updateAppointment, refetch } = useAppointments(vehicle?.id);
+  const { appointments, updateAppointment, refetch } = useAppointments(vehicle?.id, vehicle);
   const { results, loading: searchLoading, error: searchError, searchNearby } = useShopSearch();
 
   useFocusEffect(

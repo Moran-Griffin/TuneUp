@@ -6,6 +6,7 @@ import { useColorScheme } from 'nativewind';
 import { Lock, Unlock } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
+import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 
 function Field({ label, value, onChangeText, keyboardType = 'default', locked }: any) {
   return (
@@ -43,6 +44,7 @@ export default function ProfileScreen() {
   const [year, setYear] = useState(vehicle?.year ?? '');
   const [mileage, setMileage] = useState(vehicle?.current_mileage?.toString() ?? '');
   const [oilChangeInterval, setOilChangeInterval] = useState(vehicle?.oil_change_interval_miles?.toString() ?? '5000');
+  const [oilChangeIntervalMonths, setOilChangeIntervalMonths] = useState(vehicle?.oil_change_interval_months?.toString() ?? '4');
   const [inspectionInterval, setInspectionInterval] = useState(vehicle?.inspection_interval_months?.toString() ?? '12');
   const [emissionsEnabled, setEmissionsEnabled] = useState(vehicle?.emissions_enabled ?? false);
   const [emissionsInterval, setEmissionsInterval] = useState(vehicle?.emissions_interval_months?.toString() ?? '24');
@@ -57,6 +59,7 @@ export default function ProfileScreen() {
       setYear(vehicle.year ?? '');
       setMileage(vehicle.current_mileage?.toString() ?? '');
       setOilChangeInterval(vehicle.oil_change_interval_miles?.toString() ?? '5000');
+      setOilChangeIntervalMonths(vehicle.oil_change_interval_months?.toString() ?? '4');
       setInspectionInterval(vehicle.inspection_interval_months?.toString() ?? '12');
       setEmissionsEnabled(vehicle.emissions_enabled ?? false);
       setEmissionsInterval(vehicle.emissions_interval_months?.toString() ?? '24');
@@ -77,6 +80,7 @@ export default function ProfileScreen() {
     setYear(vehicle.year ?? '');
     setMileage(vehicle.current_mileage?.toString() ?? '');
     setOilChangeInterval(vehicle.oil_change_interval_miles?.toString() ?? '5000');
+    setOilChangeIntervalMonths(vehicle.oil_change_interval_months?.toString() ?? '4');
     setInspectionInterval(vehicle.inspection_interval_months?.toString() ?? '12');
     setEmissionsInterval(vehicle.emissions_interval_months?.toString() ?? '24');
   }, [vehicle, locked]));
@@ -123,6 +127,7 @@ export default function ProfileScreen() {
               setYear('');
               setMileage('');
               setOilChangeInterval('5000');
+              setOilChangeIntervalMonths('4');
               setInspectionInterval('12');
               setEmissionsEnabled(false);
               setEmissionsInterval('24');
@@ -152,6 +157,11 @@ export default function ProfileScreen() {
       Alert.alert('Validation', 'Oil change interval must be a positive number.');
       return;
     }
+    const oilIntervalMonthsNum = parseInt(oilChangeIntervalMonths, 10);
+    if (isNaN(oilIntervalMonthsNum) || oilIntervalMonthsNum < 1) {
+      Alert.alert('Validation', 'Oil change month interval must be a positive number.');
+      return;
+    }
     const inspectionIntervalNum = parseInt(inspectionInterval, 10);
     if (isNaN(inspectionIntervalNum) || inspectionIntervalNum < 1) {
       Alert.alert('Validation', 'Inspection interval must be a positive number.');
@@ -167,14 +177,12 @@ export default function ProfileScreen() {
       const data = {
         make, model, year, current_mileage: mileageNum,
         oil_change_interval_miles: oilIntervalNum,
+        oil_change_interval_months: oilIntervalMonthsNum,
         inspection_interval_months: inspectionIntervalNum,
         emissions_interval_months: emissionsIntervalNum,
       };
-      if (vehicle) {
-        await updateVehicle(data);
-      } else {
-        await createVehicle(data);
-      }
+      const saved = vehicle ? await updateVehicle(data) : await createVehicle(data);
+      if (saved) scheduleMaintenanceNotifications(saved).catch(() => {});
       setLocked(true);
       Alert.alert('Saved', 'Vehicle details updated.');
     } catch (e: any) {
@@ -210,6 +218,7 @@ export default function ProfileScreen() {
         <Field label="Year" value={year} onChangeText={setYear} keyboardType="numeric" locked={locked} />
         <Field label="Current Mileage" value={mileage} onChangeText={setMileage} keyboardType="numeric" locked={locked} />
         <Field label="Oil Change Interval (miles)" value={oilChangeInterval} onChangeText={setOilChangeInterval} keyboardType="numeric" locked={locked} />
+        <Field label="Oil Change Interval (months)" value={oilChangeIntervalMonths} onChangeText={setOilChangeIntervalMonths} keyboardType="numeric" locked={locked} />
         <Field label="Safety Inspection Interval (months)" value={inspectionInterval} onChangeText={setInspectionInterval} keyboardType="numeric" locked={locked} />
         {!locked && (
           <TouchableOpacity

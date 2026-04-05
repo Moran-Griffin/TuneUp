@@ -8,8 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
 import { useAppointments } from '@/hooks/useAppointments';
 import { ScheduledAppointmentModal } from '@/components/ScheduledAppointmentModal';
-import { registerForPushNotifications } from '@/lib/notifications';
+import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 import { startLocationTracking } from '@/lib/locationTask';
+import { replayQueue, getQueueCount } from '@/lib/offlineQueue';
 import { ServiceType, Shop } from '@/types';
 import '../global.css';
 
@@ -24,7 +25,7 @@ export default function RootLayout() {
     });
   }, []);
   const { vehicle } = useVehicle(session?.user.id);
-  const { addAppointment } = useAppointments(vehicle?.id);
+  const { addAppointment } = useAppointments(vehicle?.id, vehicle);
 
   const pendingShop = useRef<Shop | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -40,8 +41,19 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!session) return;
-    registerForPushNotifications().catch((e: unknown) => console.warn('Push registration failed:', e));
+    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch((e: unknown) => console.warn('Notification scheduling failed:', e));
     startLocationTracking().catch((e: unknown) => console.warn('Location tracking failed:', e));
+  }, [session, vehicle]);
+
+  useEffect(() => {
+    if (!session) return;
+    getQueueCount().then(count => {
+      if (count === 0) return;
+      replayQueue().then(({ replayed, failed }) => {
+        if (replayed > 0) Alert.alert('Synced', `${replayed} offline ${replayed === 1 ? 'entry' : 'entries'} saved.`);
+        if (failed > 0) console.warn(`Offline queue: ${failed} entries still pending.`);
+      });
+    });
   }, [session]);
 
   useEffect(() => {
@@ -50,7 +62,7 @@ export default function RootLayout() {
       if (data?.type === 'location_prompt') {
         router.push('/log/new');
       } else if (data?.type === 'maintenance_reminder') {
-        router.push('/(tabs)/schedule');
+        router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } });
       } else if (data?.type === 'mileage_update') {
         router.push('/(tabs)/profile');
       }
