@@ -6,17 +6,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export const LOCATION_TASK_NAME = 'tuneup-location-task';
 const DWELL_KEY = '@tuneup/dwell_start';
 const DWELL_NAME_KEY = '@tuneup/dwell_name';
-const DWELL_MS = 5 * 60 * 1000; // 5 minutes
+const DWELL_MS = 5 * 60 * 1000;
+const DETECTION_RADIUS_M = 100;
 
-const AUTO_SHOP_KEYWORDS = [
-  'auto', 'car', 'motor', 'mechanic', 'tire', 'lube', 'jiffy', 'midas',
-  'meineke', 'firestone', 'dealer', 'toyota', 'honda', 'ford', 'chevrolet',
-  'nissan', 'bmw', 'mercedes', 'hyundai', 'kia', 'subaru', 'shop', 'garage',
-];
+const PLACES_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
 
-function isAutoShop(place: Location.LocationGeocodedAddress): boolean {
-  const name = (place.name ?? '').toLowerCase();
-  return AUTO_SHOP_KEYWORDS.some(kw => name.includes(kw));
+async function getNearbyAutoShop(lat: number, lng: number): Promise<string | null> {
+  const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
+  if (!apiKey) return null;
+  const url = `${PLACES_URL}?location=${lat},${lng}&radius=${DETECTION_RADIUS_M}&type=car_repair|car_dealer&key=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  if (data.status === 'OK' && data.results?.length > 0) {
+    return data.results[0].name as string;
+  }
+  return null;
 }
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
@@ -28,24 +32,23 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
   const { latitude, longitude } = locations[locations.length - 1].coords;
 
   try {
-    const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
-    const atShop = place && isAutoShop(place);
+    const shopName = await getNearbyAutoShop(latitude, longitude);
 
-    if (atShop) {
+    if (shopName) {
       const existing = await AsyncStorage.getItem(DWELL_KEY);
       if (!existing) {
         await AsyncStorage.setItem(DWELL_KEY, Date.now().toString());
-        await AsyncStorage.setItem(DWELL_NAME_KEY, place.name ?? 'the shop');
+        await AsyncStorage.setItem(DWELL_NAME_KEY, shopName);
       } else {
         const elapsed = Date.now() - parseInt(existing, 10);
         if (elapsed >= DWELL_MS) {
-          const shopName = await AsyncStorage.getItem(DWELL_NAME_KEY);
+          const savedName = await AsyncStorage.getItem(DWELL_NAME_KEY);
           await AsyncStorage.removeItem(DWELL_KEY);
           await AsyncStorage.removeItem(DWELL_NAME_KEY);
           await Notifications.scheduleNotificationAsync({
             content: {
               title: 'Getting work done?',
-              body: `You've been at ${shopName} for a bit — log your service in TuneUp?`,
+              body: `You've been at ${savedName} for a bit — log your service in TuneUp?`,
               data: { type: 'location_prompt' },
             },
             trigger: null,
@@ -57,7 +60,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
       await AsyncStorage.removeItem(DWELL_NAME_KEY);
     }
   } catch (_) {
-    // Reverse geocode can fail silently
+    // Places API can fail silently
   }
 });
 
