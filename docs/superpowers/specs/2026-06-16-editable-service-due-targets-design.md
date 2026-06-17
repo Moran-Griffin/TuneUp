@@ -98,18 +98,18 @@ the override:
 `ServiceDueCard` renders entirely from the returned `ServiceStatus`, so no display logic
 changes there — only a new `onLongPress` prop wired to open the modal.
 
-## Notifications Consistency (`supabase/functions/daily-notifications/index.ts`)
+## Notifications Consistency (local notifications)
 
-The cron recomputes due-status server-side, so it must honor the same overrides;
-otherwise the screen could read "fine" while a push still says "overdue."
+Reminders are scheduled client-side in `lib/notifications.ts`
+(`scheduleMaintenanceNotifications`), which already calls the `serviceStatus`
+functions and already handles emissions. So once `serviceStatus.ts` is override-aware,
+local notifications honor overrides automatically — the only requirement is to
+re-run `scheduleMaintenanceNotifications(updatedVehicle)` after a successful edit save,
+exactly as `app/(tabs)/profile.tsx` does on its save.
 
-- `getOilDue` and `getInspectionDue` updated to apply overrides exactly as the client does.
-- **Emissions added to push:** a new `getEmissionsDue` plus a reminder block mirroring
-  inspection (respects `emissions_due_date_override`, skips if a scheduled emissions
-  appointment exists, uses `emissions_interval_months`). This closes the existing gap
-  where emissions only appears in-app and never sends a push.
-- The pre-existing hardcoded `OIL_CHANGE_INTERVAL_MONTHS = 6` in the function is left
-  as-is (out of scope); only override handling and emissions are added.
+The server-side Edge Function (`supabase/functions/daily-notifications/index.ts`) is
+left untouched: it is leftover from the old push-based design, is not deployed, and is
+superseded by local notifications. (Out of scope.)
 
 ## Overrides Expire on Real Service
 
@@ -141,6 +141,5 @@ restore an override).
 - `types/index.ts` — add override fields to `Vehicle`.
 - `lib/serviceStatus.ts` — override-aware status computation.
 - `components/ServiceDueCard.tsx` — `onLongPress` prop.
-- `app/(tabs)/index.tsx` — three edit modals + long-press wiring + save handlers.
-- `supabase/functions/daily-notifications/index.ts` — override handling + emissions push.
+- `app/(tabs)/index.tsx` — three edit modals + long-press wiring + save handlers + reschedule local notifications on save.
 - `__tests__/serviceStatus.test.ts` — new cases.
