@@ -112,7 +112,7 @@ export default function HomeScreen() {
 
     const queue: PromptItem[] = [];
 
-    if (!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage && !promptedServices.current.has('oil')) {
+    if (!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage && vehicle.oil_due_mileage_override == null && vehicle.oil_due_date_override == null && !promptedServices.current.has('oil')) {
       promptedServices.current.add('oil');
       queue.push({
         title: 'When was your last oil change?',
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         onEnter: () => setOilModalVisible(true),
       });
     }
-    if (!vehicle.last_inspection_date && !promptedServices.current.has('inspection')) {
+    if (!vehicle.last_inspection_date && vehicle.inspection_due_date_override == null && !promptedServices.current.has('inspection')) {
       promptedServices.current.add('inspection');
       queue.push({
         title: 'When was your last safety inspection?',
@@ -128,7 +128,7 @@ export default function HomeScreen() {
         onEnter: () => setInspectionModalVisible(true),
       });
     }
-    if (vehicle.emissions_enabled && !vehicle.last_emissions_date && !promptedServices.current.has('emissions')) {
+    if (vehicle.emissions_enabled && !vehicle.last_emissions_date && vehicle.emissions_due_date_override == null && !promptedServices.current.has('emissions')) {
       promptedServices.current.add('emissions');
       queue.push({
         title: 'When was your last emissions test?',
@@ -330,7 +330,7 @@ export default function HomeScreen() {
             title="Oil Change"
             status={oilStatus}
             onSchedule={() => router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } })}
-            onNoRecord={!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage ? () => setOilModalVisible(true) : undefined}
+            onNoRecord={!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage && vehicle.oil_due_mileage_override == null && vehicle.oil_due_date_override == null ? () => setOilModalVisible(true) : undefined}
             noRecordLabel="Log Oil Change Date"
             isScheduled={scheduledTypes.has('oil_change')}
             scheduledDate={scheduledDates.get('oil_change')}
@@ -340,7 +340,7 @@ export default function HomeScreen() {
             title="Safety Inspection"
             status={inspectionStatus}
             onSchedule={() => router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } })}
-            onNoRecord={!vehicle.last_inspection_date ? () => setInspectionModalVisible(true) : undefined}
+            onNoRecord={!vehicle.last_inspection_date && vehicle.inspection_due_date_override == null ? () => setInspectionModalVisible(true) : undefined}
             noRecordLabel="Log Inspection Date"
             isScheduled={scheduledTypes.has('inspection')}
             scheduledDate={scheduledDates.get('inspection')}
@@ -351,7 +351,7 @@ export default function HomeScreen() {
               title="Emissions Test"
               status={emissionsStatus}
               onSchedule={() => router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } })}
-              onNoRecord={!vehicle.last_emissions_date ? () => setEmissionsModalVisible(true) : undefined}
+              onNoRecord={!vehicle.last_emissions_date && vehicle.emissions_due_date_override == null ? () => setEmissionsModalVisible(true) : undefined}
               isScheduled={scheduledTypes.has('emissions_inspection')}
               scheduledDate={scheduledDates.get('emissions_inspection')}
               noRecordLabel="Log Emissions Date"
