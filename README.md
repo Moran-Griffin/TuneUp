@@ -58,7 +58,9 @@ Run the migration in your Supabase SQL editor:
 
 ```bash
 supabase/migrations/20260329000001_initial.sql
+supabase/migrations/20260401000001_fixes.sql
 supabase/migrations/20260403000001_oil_interval_months.sql
+supabase/migrations/20260616000001_service_due_overrides.sql
 ```
 
 ### Running the App
@@ -73,6 +75,30 @@ npx expo run:ios --device
 # Run tests
 npm test
 ```
+
+### Building an .ipa (sideload via AltStore)
+
+Builds an unsigned Release `.ipa` and writes it to the project root as `TuneUp.ipa`.
+AltStore re-signs it with your Apple ID at install time, so no distribution
+certificate is needed.
+
+```bash
+./scripts/build-ipa.sh
+```
+
+This runs an unsigned device build and packages the result:
+
+```bash
+# What the script does, if you want to run it by hand:
+xcodebuild -workspace ios/TuneUp.xcworkspace -scheme TuneUp \
+  -configuration Release -sdk iphoneos -derivedDataPath ./build \
+  CODE_SIGNING_ALLOWED=NO
+cd build/Build/Products/Release-iphoneos
+mkdir Payload && cp -R TuneUp.app Payload/ && zip -r TuneUp.ipa Payload
+```
+
+Then open `TuneUp.ipa` with AltStore to install. If you changed native config
+since the last build, run `npx expo prebuild -p ios` first to regenerate `ios/`.
 
 > Background location and notifications do not work in Expo Go. Use `npx expo run:ios` for full functionality.
 
