@@ -11,6 +11,7 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { ServiceDueCard } from '@/components/ServiceDueCard';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
+import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 import { ServiceType } from '@/types';
 
 function toDateString(d: Date): string {
@@ -27,12 +28,17 @@ function toDisplayDate(d: Date): string {
   return `${m}/${day}/${y}`;
 }
 
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 type PromptItem = { title: string; message: string; onEnter: () => void };
 
 export default function HomeScreen() {
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle, loading: vehicleLoading, refetch: refetchVehicle } = useVehicle(session?.user.id);
+  const { vehicle, loading: vehicleLoading, refetch: refetchVehicle, updateVehicle } = useVehicle(session?.user.id);
   const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id, vehicle);
   const { appointments, refetch: refetchAppointments } = useAppointments(vehicle?.id);
 
@@ -54,6 +60,26 @@ export default function HomeScreen() {
   const [emissionsDate, setEmissionsDate] = useState(new Date());
   const [showEmissionsDatePicker, setShowEmissionsDatePicker] = useState(false);
   const [savingEmissions, setSavingEmissions] = useState(false);
+
+  // Oil edit (override) modal
+  const [editOilVisible, setEditOilVisible] = useState(false);
+  const [editOilCurrentMileage, setEditOilCurrentMileage] = useState('');
+  const [editOilDueMileage, setEditOilDueMileage] = useState('');
+  const [editOilDueDate, setEditOilDueDate] = useState<Date | null>(null);
+  const [showEditOilDatePicker, setShowEditOilDatePicker] = useState(false);
+  const [savingOilEdit, setSavingOilEdit] = useState(false);
+
+  // Inspection edit (override) modal
+  const [editInspectionVisible, setEditInspectionVisible] = useState(false);
+  const [editInspectionDueDate, setEditInspectionDueDate] = useState<Date | null>(null);
+  const [showEditInspectionDatePicker, setShowEditInspectionDatePicker] = useState(false);
+  const [savingInspectionEdit, setSavingInspectionEdit] = useState(false);
+
+  // Emissions edit (override) modal
+  const [editEmissionsVisible, setEditEmissionsVisible] = useState(false);
+  const [editEmissionsDueDate, setEditEmissionsDueDate] = useState<Date | null>(null);
+  const [showEditEmissionsDatePicker, setShowEditEmissionsDatePicker] = useState(false);
+  const [savingEmissionsEdit, setSavingEmissionsEdit] = useState(false);
 
   const promptedServices = useRef<Set<string>>(new Set());
   const prevEmissionsEnabled = useRef<boolean | undefined>(undefined);
@@ -160,6 +186,93 @@ export default function HomeScreen() {
     }
   }
 
+  function openOilEdit() {
+    if (!vehicle) return;
+    setEditOilCurrentMileage(String(vehicle.current_mileage));
+    setEditOilDueMileage(vehicle.oil_due_mileage_override != null ? String(vehicle.oil_due_mileage_override) : '');
+    setEditOilDueDate(vehicle.oil_due_date_override ? parseDateString(vehicle.oil_due_date_override) : null);
+    setShowEditOilDatePicker(false);
+    setEditOilVisible(true);
+  }
+
+  async function handleSaveOilEdit() {
+    if (!vehicle) return;
+    const cm = parseInt(editOilCurrentMileage, 10);
+    if (editOilCurrentMileage.trim() === '' || isNaN(cm) || cm < 0) {
+      Alert.alert('Validation', 'Current mileage must be a non-negative number.');
+      return;
+    }
+    let dueMileageOverride: number | null = null;
+    if (editOilDueMileage.trim() !== '') {
+      const dm = parseInt(editOilDueMileage, 10);
+      if (isNaN(dm) || dm < 0) {
+        Alert.alert('Validation', 'Due mileage must be a non-negative number.');
+        return;
+      }
+      dueMileageOverride = dm;
+    }
+    setSavingOilEdit(true);
+    try {
+      const updated = await updateVehicle({
+        current_mileage: cm,
+        oil_due_mileage_override: dueMileageOverride,
+        oil_due_date_override: editOilDueDate ? toDateString(editOilDueDate) : null,
+      });
+      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
+      setEditOilVisible(false);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSavingOilEdit(false);
+    }
+  }
+
+  function openInspectionEdit() {
+    if (!vehicle) return;
+    setEditInspectionDueDate(vehicle.inspection_due_date_override ? parseDateString(vehicle.inspection_due_date_override) : null);
+    setShowEditInspectionDatePicker(false);
+    setEditInspectionVisible(true);
+  }
+
+  async function handleSaveInspectionEdit() {
+    if (!vehicle) return;
+    setSavingInspectionEdit(true);
+    try {
+      const updated = await updateVehicle({
+        inspection_due_date_override: editInspectionDueDate ? toDateString(editInspectionDueDate) : null,
+      });
+      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
+      setEditInspectionVisible(false);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSavingInspectionEdit(false);
+    }
+  }
+
+  function openEmissionsEdit() {
+    if (!vehicle) return;
+    setEditEmissionsDueDate(vehicle.emissions_due_date_override ? parseDateString(vehicle.emissions_due_date_override) : null);
+    setShowEditEmissionsDatePicker(false);
+    setEditEmissionsVisible(true);
+  }
+
+  async function handleSaveEmissionsEdit() {
+    if (!vehicle) return;
+    setSavingEmissionsEdit(true);
+    try {
+      const updated = await updateVehicle({
+        emissions_due_date_override: editEmissionsDueDate ? toDateString(editEmissionsDueDate) : null,
+      });
+      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
+      setEditEmissionsVisible(false);
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setSavingEmissionsEdit(false);
+    }
+  }
+
   if (vehicleLoading) {
     return <View className="flex-1 items-center justify-center"><Text className="text-gray-400">Loading...</Text></View>;
   }
@@ -218,6 +331,7 @@ export default function HomeScreen() {
             noRecordLabel="Log Oil Change Date"
             isScheduled={scheduledTypes.has('oil_change')}
             scheduledDate={scheduledDates.get('oil_change')}
+            onLongPress={openOilEdit}
           />
           <ServiceDueCard
             title="Safety Inspection"
@@ -227,6 +341,7 @@ export default function HomeScreen() {
             noRecordLabel="Log Inspection Date"
             isScheduled={scheduledTypes.has('inspection')}
             scheduledDate={scheduledDates.get('inspection')}
+            onLongPress={openInspectionEdit}
           />
           {vehicle.emissions_enabled && emissionsStatus && (
             <ServiceDueCard
@@ -237,6 +352,7 @@ export default function HomeScreen() {
               isScheduled={scheduledTypes.has('emissions_inspection')}
               scheduledDate={scheduledDates.get('emissions_inspection')}
               noRecordLabel="Log Emissions Date"
+              onLongPress={openEmissionsEdit}
             />
           )}
         </View>
@@ -389,6 +505,150 @@ export default function HomeScreen() {
             </TouchableOpacity>
             <TouchableOpacity className="items-center" onPress={() => { setEmissionsModalVisible(false); showNextPrompt(); }}>
               <Text className="text-gray-500 dark:text-[#8e8e93]">Skip</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Oil Due Modal */}
+      <Modal visible={editOilVisible} transparent animationType="slide">
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Edit Oil Change</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">Leave a due field blank to use the automatic estimate.</Text>
+
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Current mileage</Text>
+            <TextInput
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
+              value={editOilCurrentMileage}
+              onChangeText={setEditOilCurrentMileage}
+              keyboardType="numeric"
+            />
+
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Due at mileage (optional)</Text>
+            <TextInput
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4 text-base text-gray-900 dark:text-white"
+              value={editOilDueMileage}
+              onChangeText={setEditOilDueMileage}
+              placeholder="Auto"
+              placeholderTextColor="#9ca3af"
+              keyboardType="numeric"
+            />
+
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Due date (optional)</Text>
+            <TouchableOpacity
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
+              onPress={() => {
+                if (!editOilDueDate) setEditOilDueDate(new Date());
+                setShowEditOilDatePicker(!showEditOilDatePicker);
+              }}
+            >
+              <Text className="text-base text-gray-900 dark:text-white">{editOilDueDate ? toDisplayDate(editOilDueDate) : 'Auto — tap to set'}</Text>
+            </TouchableOpacity>
+            {editOilDueDate && (
+              <TouchableOpacity className="mb-2" onPress={() => { setEditOilDueDate(null); setShowEditOilDatePicker(false); }}>
+                <Text className="text-blue-600 dark:text-[#0a84ff] text-sm">Clear date override</Text>
+              </TouchableOpacity>
+            )}
+            {showEditOilDatePicker && editOilDueDate && (
+              <DateTimePicker
+                value={editOilDueDate}
+                mode="date"
+                display="inline"
+                onChange={(_, selected) => { if (selected) setEditOilDueDate(selected); }}
+              />
+            )}
+            <View className="mb-4" />
+
+            <TouchableOpacity className="bg-blue-600 rounded-xl py-4 items-center mb-3" onPress={handleSaveOilEdit} disabled={savingOilEdit}>
+              <Text className="text-white font-semibold text-base">{savingOilEdit ? 'Saving...' : 'Save'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="items-center" onPress={() => setEditOilVisible(false)}>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Inspection Due Modal */}
+      <Modal visible={editInspectionVisible} transparent animationType="slide">
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Edit Safety Inspection</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">Leave blank to use the automatic estimate.</Text>
+
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Due date (optional)</Text>
+            <TouchableOpacity
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
+              onPress={() => {
+                if (!editInspectionDueDate) setEditInspectionDueDate(new Date());
+                setShowEditInspectionDatePicker(!showEditInspectionDatePicker);
+              }}
+            >
+              <Text className="text-base text-gray-900 dark:text-white">{editInspectionDueDate ? toDisplayDate(editInspectionDueDate) : 'Auto — tap to set'}</Text>
+            </TouchableOpacity>
+            {editInspectionDueDate && (
+              <TouchableOpacity className="mb-2" onPress={() => { setEditInspectionDueDate(null); setShowEditInspectionDatePicker(false); }}>
+                <Text className="text-blue-600 dark:text-[#0a84ff] text-sm">Clear date override</Text>
+              </TouchableOpacity>
+            )}
+            {showEditInspectionDatePicker && editInspectionDueDate && (
+              <DateTimePicker
+                value={editInspectionDueDate}
+                mode="date"
+                display="inline"
+                onChange={(_, selected) => { if (selected) setEditInspectionDueDate(selected); }}
+              />
+            )}
+            <View className="mb-4" />
+
+            <TouchableOpacity className="bg-blue-600 rounded-xl py-4 items-center mb-3" onPress={handleSaveInspectionEdit} disabled={savingInspectionEdit}>
+              <Text className="text-white font-semibold text-base">{savingInspectionEdit ? 'Saving...' : 'Save'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="items-center" onPress={() => setEditInspectionVisible(false)}>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Emissions Due Modal */}
+      <Modal visible={editEmissionsVisible} transparent animationType="slide">
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
+            <Text className="text-xl font-bold dark:text-white mb-1">Edit Emissions Test</Text>
+            <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">Leave blank to use the automatic estimate.</Text>
+
+            <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Due date (optional)</Text>
+            <TouchableOpacity
+              className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
+              onPress={() => {
+                if (!editEmissionsDueDate) setEditEmissionsDueDate(new Date());
+                setShowEditEmissionsDatePicker(!showEditEmissionsDatePicker);
+              }}
+            >
+              <Text className="text-base text-gray-900 dark:text-white">{editEmissionsDueDate ? toDisplayDate(editEmissionsDueDate) : 'Auto — tap to set'}</Text>
+            </TouchableOpacity>
+            {editEmissionsDueDate && (
+              <TouchableOpacity className="mb-2" onPress={() => { setEditEmissionsDueDate(null); setShowEditEmissionsDatePicker(false); }}>
+                <Text className="text-blue-600 dark:text-[#0a84ff] text-sm">Clear date override</Text>
+              </TouchableOpacity>
+            )}
+            {showEditEmissionsDatePicker && editEmissionsDueDate && (
+              <DateTimePicker
+                value={editEmissionsDueDate}
+                mode="date"
+                display="inline"
+                onChange={(_, selected) => { if (selected) setEditEmissionsDueDate(selected); }}
+              />
+            )}
+            <View className="mb-4" />
+
+            <TouchableOpacity className="bg-blue-600 rounded-xl py-4 items-center mb-3" onPress={handleSaveEmissionsEdit} disabled={savingEmissionsEdit}>
+              <Text className="text-white font-semibold text-base">{savingEmissionsEdit ? 'Saving...' : 'Save'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity className="items-center" onPress={() => setEditEmissionsVisible(false)}>
+              <Text className="text-gray-500 dark:text-[#8e8e93]">Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
