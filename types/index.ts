@@ -25,6 +25,10 @@ export interface Vehicle {
   emissions_enabled: boolean;
   last_emissions_date: string | null;
   emissions_interval_months: number;
+  oil_due_mileage_override: number | null;
+  oil_due_date_override: string | null;
+  inspection_due_date_override: string | null;
+  emissions_due_date_override: string | null;
   created_at: string;
 }
 
