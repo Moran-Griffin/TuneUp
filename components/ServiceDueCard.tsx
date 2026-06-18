@@ -10,9 +10,10 @@ interface Props {
   noRecordLabel?: string;
   isScheduled?: boolean;
   scheduledDate?: string;
+  onLongPress?: () => void;
 }
 
-export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecordLabel, isScheduled, scheduledDate }: Props) {
+export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecordLabel, isScheduled, scheduledDate, onLongPress }: Props) {
   const scheduledNotYetDue = isScheduled && !status.isDue && !status.isOverdue && !status.noRecord;
   const bgColor = status.isOverdue
     ? 'bg-red-50 dark:bg-[#2c1516]'
@@ -46,7 +47,12 @@ export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecord
   }
 
   return (
-    <View className={`${bgColor} ${borderColor} border rounded-2xl p-4 mb-3`}>
+    <TouchableOpacity
+      activeOpacity={onLongPress ? 0.7 : 1}
+      onLongPress={onLongPress}
+      delayLongPress={400}
+      className={`${bgColor} ${borderColor} border rounded-2xl p-4 mb-3`}
+    >
       <View className="flex-row items-center mb-2">
         <Icon size={18} color={iconColor} />
         <Text className="font-semibold text-gray-900 dark:text-white ml-2">{title}</Text>
@@ -82,6 +88,6 @@ export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecord
           <Text className="text-blue-600 dark:text-[#0a84ff] font-medium text-sm">Schedule Service</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
