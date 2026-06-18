@@ -188,6 +188,7 @@ export default function HomeScreen() {
 
   function openOilEdit() {
     if (!vehicle) return;
+    setSavingOilEdit(false);
     setEditOilCurrentMileage(String(vehicle.current_mileage));
     setEditOilDueMileage(vehicle.oil_due_mileage_override != null ? String(vehicle.oil_due_mileage_override) : '');
     setEditOilDueDate(vehicle.oil_due_date_override ? parseDateString(vehicle.oil_due_date_override) : null);
@@ -205,8 +206,8 @@ export default function HomeScreen() {
     let dueMileageOverride: number | null = null;
     if (editOilDueMileage.trim() !== '') {
       const dm = parseInt(editOilDueMileage, 10);
-      if (isNaN(dm) || dm < 0) {
-        Alert.alert('Validation', 'Due mileage must be a non-negative number.');
+      if (isNaN(dm) || dm <= 0) {
+        Alert.alert('Validation', 'Due mileage must be a positive number.');
         return;
       }
       dueMileageOverride = dm;
@@ -229,6 +230,7 @@ export default function HomeScreen() {
 
   function openInspectionEdit() {
     if (!vehicle) return;
+    setSavingInspectionEdit(false);
     setEditInspectionDueDate(vehicle.inspection_due_date_override ? parseDateString(vehicle.inspection_due_date_override) : null);
     setShowEditInspectionDatePicker(false);
     setEditInspectionVisible(true);
@@ -252,6 +254,7 @@ export default function HomeScreen() {
 
   function openEmissionsEdit() {
     if (!vehicle) return;
+    setSavingEmissionsEdit(false);
     setEditEmissionsDueDate(vehicle.emissions_due_date_override ? parseDateString(vehicle.emissions_due_date_override) : null);
     setShowEditEmissionsDatePicker(false);
     setEditEmissionsVisible(true);
@@ -540,7 +543,7 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => {
                 if (!editOilDueDate) setEditOilDueDate(new Date());
-                setShowEditOilDatePicker(!showEditOilDatePicker);
+                setShowEditOilDatePicker((prev) => !prev);
               }}
             >
               <Text className="text-base text-gray-900 dark:text-white">{editOilDueDate ? toDisplayDate(editOilDueDate) : 'Auto — tap to set'}</Text>
@@ -582,7 +585,7 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => {
                 if (!editInspectionDueDate) setEditInspectionDueDate(new Date());
-                setShowEditInspectionDatePicker(!showEditInspectionDatePicker);
+                setShowEditInspectionDatePicker((prev) => !prev);
               }}
             >
               <Text className="text-base text-gray-900 dark:text-white">{editInspectionDueDate ? toDisplayDate(editInspectionDueDate) : 'Auto — tap to set'}</Text>
@@ -624,7 +627,7 @@ export default function HomeScreen() {
               className="border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-2"
               onPress={() => {
                 if (!editEmissionsDueDate) setEditEmissionsDueDate(new Date());
-                setShowEditEmissionsDatePicker(!showEditEmissionsDatePicker);
+                setShowEditEmissionsDatePicker((prev) => !prev);
               }}
             >
               <Text className="text-base text-gray-900 dark:text-white">{editEmissionsDueDate ? toDisplayDate(editEmissionsDueDate) : 'Auto — tap to set'}</Text>
