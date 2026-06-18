@@ -196,6 +196,7 @@ describe('getInspectionStatus override', () => {
     const status = getInspectionStatus(v);
     expect(status.isOverdue).toBe(false);
     expect(status.isDue).toBe(true);
+    expect(status.daysUntilDue === 9 || status.daysUntilDue === 10).toBe(true);
     expect(status.noRecord).toBe(false);
   });
 
@@ -215,6 +216,19 @@ describe('getEmissionsStatus override', () => {
     };
     const status = getEmissionsStatus(v);
     expect(status.isOverdue).toBe(true);
+    expect(status.noRecord).toBe(false);
+  });
+
+  it('is due but not overdue when the override date is in the near future', () => {
+    const v: Vehicle = {
+      ...baseVehicle,
+      last_emissions_date: null,
+      emissions_due_date_override: daysFromNow(10),
+    };
+    const status = getEmissionsStatus(v);
+    expect(status.isOverdue).toBe(false);
+    expect(status.isDue).toBe(true);
+    expect(status.daysUntilDue === 9 || status.daysUntilDue === 10).toBe(true);
     expect(status.noRecord).toBe(false);
   });
 });
