@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ServiceStatus } from '@/types';
 import { AlertTriangle, CheckCircle, Clock } from 'lucide-react-native';
+import { getStatusSubtitle, getDueDetail } from '@/lib/serviceCardLabels';
 
 interface Props {
   title: string;
@@ -28,23 +29,8 @@ export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecord
   const Icon = status.isOverdue ? AlertTriangle : (status.isDue || scheduledNotYetDue) ? Clock : CheckCircle;
   const iconColor = status.isOverdue ? '#ef4444' : (status.isDue || scheduledNotYetDue) ? '#f59e0b' : '#22c55e';
 
-  function getSubtitle() {
-    if (status.noRecord) return 'No record found';
-    if (isScheduled && scheduledNotYetDue) return 'Maintenance scheduled';
-    if (isScheduled && status.isDue && !status.isOverdue) return 'Maintenance scheduled';
-    if (isScheduled && status.isOverdue) return 'Overdue — appointment scheduled';
-    if (status.isOverdue) {
-      if (status.milesUntilDue !== null) return `${Math.abs(status.milesUntilDue).toLocaleString()} miles overdue`;
-      if (status.daysUntilDue !== null) return `${Math.abs(status.daysUntilDue)} days overdue`;
-      return 'Overdue';
-    }
-    if (status.isDue) {
-      if (status.milesUntilDue !== null) return `Due in ${status.milesUntilDue.toLocaleString()} miles`;
-      if (status.daysUntilDue !== null) return `Due in ${status.daysUntilDue} days`;
-      return 'Due soon';
-    }
-    return 'Up to date';
-  }
+  const subtitle = getStatusSubtitle(status, { isScheduled, scheduledNotYetDue });
+  const dueDetail = getDueDetail(status);
 
   return (
     <TouchableOpacity
@@ -57,19 +43,14 @@ export function ServiceDueCard({ title, status, onSchedule, onNoRecord, noRecord
         <Icon size={18} color={iconColor} />
         <Text className="font-semibold text-gray-900 dark:text-white ml-2">{title}</Text>
       </View>
-      <Text className="text-sm text-gray-600 dark:text-[#ebebf5cc] mb-0.5">{getSubtitle()}</Text>
+      <Text className="text-sm text-gray-600 dark:text-[#ebebf5cc] mb-0.5">{subtitle}</Text>
       {isScheduled && (status.isOverdue || scheduledNotYetDue) && scheduledDate && (
         <Text className="text-xs text-gray-400 dark:text-[#636366] mb-2">
           Scheduled {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </Text>
       )}
-      {!status.noRecord && !(isScheduled && status.isDue && !status.isOverdue) && !(isScheduled && status.isOverdue) && !scheduledNotYetDue && (status.dueDate || status.dueMileage !== null) && (
-        <Text className="text-xs text-gray-400 dark:text-[#636366] mb-2">
-          {status.dueMileage !== null
-            ? `${status.isOverdue ? 'Was due at' : 'Next due at'} ${status.dueMileage.toLocaleString()} mi`
-            : `${status.isOverdue ? 'Was due' : status.isDue ? 'Due' : 'Next due'} ${status.dueDate!.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-          }
-        </Text>
+      {!status.noRecord && !(isScheduled && status.isDue && !status.isOverdue) && !(isScheduled && status.isOverdue) && !scheduledNotYetDue && dueDetail && (
+        <Text className="text-xs text-gray-400 dark:text-[#636366] mb-2">{dueDetail}</Text>
       )}
       {(status.noRecord || (isScheduled && (status.isDue || status.isOverdue || scheduledNotYetDue)) || (!status.dueDate && status.dueMileage === null)) && <View className="mb-2" />}
       {onNoRecord && (
