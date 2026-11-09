@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Build an unsigned release .ipa for sideloading via AltStore.
+# Build an unsigned release .ipa for sideloading via SideStore.
 #
-# AltStore re-signs the app with your own Apple ID at install time, so the build
+# SideStore re-signs the app with your own Apple ID at install time, so the build
 # itself is unsigned (CODE_SIGNING_ALLOWED=NO). The result is a standalone
 # Release build with the JS bundle embedded — it runs without a Metro server.
 #
@@ -45,4 +45,4 @@ rm -rf "$PRODUCTS/Payload"
 cp "$PRODUCTS/$SCHEME.ipa" "./$SCHEME.ipa"
 
 echo "==> Done: $(pwd)/$SCHEME.ipa"
-echo "    Open it with AltStore to sideload."
+echo "    Open it with SideStore to sideload."
