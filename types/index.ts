@@ -12,6 +12,7 @@ export type AppointmentStatus = 'scheduled' | 'completed' | 'cancelled';
 export interface Vehicle {
   id: string;
   user_id: string;
+  nickname: string | null;
   make: string;
   model: string;
   year: string;
@@ -42,6 +43,7 @@ export interface MaintenanceLog {
   shop_name: string | null;
   cost: number | null;
   notes: string | null;
+  custom_label: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +58,7 @@ export interface Appointment {
   scheduled_time: string | null;
   service_type: ServiceType;
   status: AppointmentStatus;
+  custom_label: string | null;
   created_at: string;
 }
 
