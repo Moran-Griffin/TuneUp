@@ -1,20 +1,22 @@
 import * as Notifications from 'expo-notifications';
 import { Vehicle, ServiceType } from '@/types';
-import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
+import {
+  buildNotificationPlan,
+  isMaintenanceNotificationId,
+  maintenanceNotificationId,
+  MILEAGE_NOTIFICATION_ID,
+  PlannedNotification,
+  ReminderService,
+} from '@/lib/notificationPlan';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
 });
-
-const SERVICE_NOTIFICATION_IDS: Partial<Record<ServiceType, string>> = {
-  oil_change: 'oil_change_reminder',
-  inspection: 'inspection_reminder',
-  emissions_inspection: 'emissions_reminder',
-};
 
 async function requestPermissions(): Promise<boolean> {
   const { status: existing } = await Notifications.getPermissionsAsync();
@@ -23,90 +25,66 @@ async function requestPermissions(): Promise<boolean> {
   return status === 'granted';
 }
 
-export async function cancelNotificationForServiceType(serviceType: ServiceType): Promise<void> {
-  const id = SERVICE_NOTIFICATION_IDS[serviceType];
-  if (id) await Notifications.cancelScheduledNotificationAsync(id).catch(() => {});
+function toTrigger(t: PlannedNotification['trigger']): Notifications.NotificationTriggerInput {
+  if (t.type === 'date') {
+    return { type: Notifications.SchedulableTriggerInputTypes.DATE, date: t.date };
+  }
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
+    hour: t.hour,
+    minute: t.minute,
+    ...(t.day !== undefined ? { day: t.day } : {}),
+    repeats: t.repeats,
+  };
 }
 
-export async function scheduleMaintenanceNotifications(vehicle: Vehicle): Promise<void> {
-  const granted = await requestPermissions();
-  if (!granted) return;
+// Serialize reschedules so overlapping calls can't interleave cancel/schedule.
+let chain: Promise<void> = Promise.resolve();
 
-  await Notifications.cancelScheduledNotificationAsync('oil_change_reminder').catch(() => {});
-  await Notifications.cancelScheduledNotificationAsync('inspection_reminder').catch(() => {});
-  await Notifications.cancelScheduledNotificationAsync('emissions_reminder').catch(() => {});
-  await Notifications.cancelScheduledNotificationAsync('mileage_update').catch(() => {});
+/** Cancel every TuneUp reminder (incl. legacy ids) and schedule the full plan for these vehicles. */
+export function scheduleAllNotifications(vehicles: Vehicle[]): Promise<void> {
+  const run = async () => {
+    const granted = await requestPermissions();
+    if (!granted) return;
 
-  const now = new Date();
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    await Promise.all(
+      scheduled
+        .filter(n => isMaintenanceNotificationId(n.identifier) || n.identifier === MILEAGE_NOTIFICATION_ID)
+        .map(n => Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {}))
+    );
 
-  // Oil change — use dueDate if available, else estimate from interval months
-  const oilStatus = getOilChangeStatus(vehicle);
-  const oilFireDate: Date | null = oilStatus.dueDate
-    ?? (vehicle.oil_change_interval_months
-      ? new Date(now.getFullYear(), now.getMonth() + vehicle.oil_change_interval_months, now.getDate())
-      : null);
-  if (oilFireDate) {
-    await Notifications.scheduleNotificationAsync({
-      identifier: 'oil_change_reminder',
-      content: {
-        title: 'Oil Change Due',
-        body: 'Your oil change is due — tap to schedule or log.',
-        data: { type: 'maintenance_reminder' },
-      },
-      trigger: oilStatus.isOverdue
-        ? { type: Notifications.SchedulableTriggerInputTypes.CALENDAR, hour: 9, minute: 0, repeats: true }
-        : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: oilFireDate },
-    });
-  }
-
-  // Inspection
-  const inspectionStatus = getInspectionStatus(vehicle);
-  if (inspectionStatus.dueDate) {
-    await Notifications.scheduleNotificationAsync({
-      identifier: 'inspection_reminder',
-      content: {
-        title: 'Inspection Due',
-        body: 'Your safety inspection is coming up — tap to schedule or log.',
-        data: { type: 'maintenance_reminder' },
-      },
-      trigger: inspectionStatus.isOverdue
-        ? { type: Notifications.SchedulableTriggerInputTypes.CALENDAR, hour: 9, minute: 0, repeats: true }
-        : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: inspectionStatus.dueDate },
-    });
-  }
-
-  // Emissions — only if enabled
-  if (vehicle.emissions_enabled) {
-    const emissionsStatus = getEmissionsStatus(vehicle);
-    if (emissionsStatus.dueDate) {
+    for (const p of buildNotificationPlan(vehicles, new Date())) {
       await Notifications.scheduleNotificationAsync({
-        identifier: 'emissions_reminder',
-        content: {
-          title: 'Emissions Test Due',
-          body: 'Your emissions test is coming up — tap to schedule or log.',
-          data: { type: 'maintenance_reminder' },
-        },
-        trigger: emissionsStatus.isOverdue
-          ? { type: Notifications.SchedulableTriggerInputTypes.CALENDAR, hour: 9, minute: 0, repeats: true }
-          : { type: Notifications.SchedulableTriggerInputTypes.DATE, date: emissionsStatus.dueDate },
+        identifier: p.identifier,
+        content: p.content,
+        trigger: toTrigger(p.trigger),
       });
     }
-  }
+  };
+  chain = chain.then(run, run);
+  return chain;
+}
 
-  // Monthly mileage prompt — repeats on the 1st of every month at 9am
-  await Notifications.scheduleNotificationAsync({
-    identifier: 'mileage_update',
-    content: {
-      title: 'How many miles?',
-      body: "It's a new month — update your mileage in TuneUp.",
-      data: { type: 'mileage_update' },
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.CALENDAR,
-      day: 1,
-      hour: 9,
-      minute: 0,
-      repeats: true,
-    },
-  });
+const REMINDER_SERVICES = new Set<ServiceType>(['oil_change', 'inspection', 'emissions_inspection']);
+
+/** Cancel one vehicle's reminder for a service (e.g. after booking an appointment for it). */
+export async function cancelVehicleServiceNotification(vehicleId: string, service: ServiceType): Promise<void> {
+  if (!REMINDER_SERVICES.has(service)) return;
+  await Notifications.cancelScheduledNotificationAsync(
+    maintenanceNotificationId(vehicleId, service as ReminderService)
+  ).catch(() => {});
+}
+
+/** @deprecated Removed in the VehicleProvider refactor; use scheduleAllNotifications. */
+export function scheduleMaintenanceNotifications(vehicle: Vehicle): Promise<void> {
+  return scheduleAllNotifications([vehicle]);
+}
+
+/** @deprecated Removed in the VehicleProvider refactor; use cancelVehicleServiceNotification. */
+export async function cancelNotificationForServiceType(serviceType: ServiceType): Promise<void> {
+  if (!REMINDER_SERVICES.has(serviceType)) return;
+  await Notifications.cancelScheduledNotificationAsync(
+    maintenanceNotificationId('', serviceType as ReminderService).slice(1)
+  ).catch(() => {});
 }
