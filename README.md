@@ -5,9 +5,10 @@ An iOS app for tracking vehicle maintenance history. TuneUp detects when you're 
 ## Features
 
 - **Auto-detection** — background geofencing detects when you've been at an auto shop for ~5 minutes and prompts you to log the visit
-- **Maintenance reminders** — daily notifications when an oil change or inspection is due, until work is logged or an appointment is scheduled
+- **Multiple vehicles** — add as many cars as you like; switch between them from the Home title, or pick **All vehicles** for an at-a-glance status overview
+- **Maintenance reminders** — daily notifications (named for the car, e.g. "Oil Change Due: 2015 Honda Civic") when an oil change, inspection, or emissions test is due, until work is logged or an appointment is scheduled
 - **Appointment scheduling** — links to shop websites; on return asks if you scheduled and saves it automatically
-- **Service history** — full log of oil changes, inspections, emissions checks, and other services
+- **Service history** — full log of oil changes, inspections, emissions checks, and other services ("Other" entries can have a custom name)
 - **Shop finder** — finds nearby auto shops using Google Places
 - **Monthly mileage prompt** — reminds you to update your mileage on the 1st of each month
 - **Offline support** — failed log entries are queued and synced automatically on next launch
@@ -61,7 +62,12 @@ supabase/migrations/20260329000001_initial.sql
 supabase/migrations/20260401000001_fixes.sql
 supabase/migrations/20260403000001_oil_interval_months.sql
 supabase/migrations/20260616000001_service_due_overrides.sql
+supabase/migrations/20261109000001_multi_vehicle.sql
 ```
+
+Run them in order, pasting each into the SQL editor. Don't use `supabase db push`:
+the project's remote migration history is empty, so it would try to re-run the
+initial migration.
 
 ### Running the App
 
@@ -99,6 +105,11 @@ mkdir Payload && cp -R TuneUp.app Payload/ && zip -r TuneUp.ipa Payload
 
 If you changed native config (`app.json`, plugins, native deps) since the last
 build, run `npx expo prebuild -p ios` first to regenerate `ios/`.
+
+If `pod install` crashes with `Unicode Normalization not appropriate for ASCII-8BIT`,
+your shell isn't using UTF-8. Run `export LANG=en_US.UTF-8` and try again. The
+`plugins/withPodDeploymentTarget.js` config plugin raises every pod to iOS 15.1,
+which newer Xcode versions require.
 
 ### Installing on your iPhone with SideStore
 
