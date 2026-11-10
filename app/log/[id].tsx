@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { FormScrollView } from '@/components/FormScrollView';
+import { CustomLabelInput } from '@/components/CustomLabelInput';
+import { normalizeCustomLabel, recentCustomLabels } from '@/lib/serviceLabel';
 import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -46,6 +48,7 @@ export default function EditLogScreen() {
   const [shopName, setShopName] = useState(log?.shop_name ?? '');
   const [cost, setCost] = useState(log?.cost?.toString() ?? '');
   const [notes, setNotes] = useState(log?.notes ?? '');
+  const [customLabel, setCustomLabel] = useState(log?.custom_label ?? '');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function EditLogScreen() {
       setShopName(log.shop_name ?? '');
       setCost(log.cost?.toString() ?? '');
       setNotes(log.notes ?? '');
+      setCustomLabel(log.custom_label ?? '');
     }
   }, [log]);
 
@@ -69,6 +73,7 @@ export default function EditLogScreen() {
         shop_name: shopName || null,
         cost: cost ? parseFloat(cost) : null,
         notes: notes || null,
+        custom_label: normalizeCustomLabel(type, customLabel),
       });
       router.back();
     } catch (e: any) {
@@ -121,6 +126,9 @@ export default function EditLogScreen() {
           ))}
         </Picker>
       </View>
+      {type === 'other' && (
+        <CustomLabelInput value={customLabel} onChangeText={setCustomLabel} suggestions={recentCustomLabels(logs)} />
+      )}
 
       <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date *</Text>
       <TouchableOpacity

@@ -4,6 +4,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
+import { SelectedVehicleLabel } from '@/components/SelectedVehicleLabel';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useShopSearch } from '@/hooks/useShopSearch';
 import { ShopListItem } from '@/components/ShopListItem';
@@ -46,7 +47,10 @@ export default function ScheduleScreen() {
   return (
     <View className="flex-1 bg-gray-50 dark:bg-black">
       <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
-        <Text className="text-2xl font-bold dark:text-white mb-3">Schedule</Text>
+        <View className="mb-3">
+          <Text className="text-2xl font-bold dark:text-white">Schedule</Text>
+          <SelectedVehicleLabel />
+        </View>
         <View className="flex-row gap-2">
           <TouchableOpacity
             className={`flex-1 py-2 rounded-xl items-center ${activeTab === 'appointments' ? 'bg-blue-600' : 'bg-gray-100 dark:bg-[#2c2c2e]'}`}

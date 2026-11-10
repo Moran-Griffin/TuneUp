@@ -1,12 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { FormScrollView } from '@/components/FormScrollView';
+import { CustomLabelInput } from '@/components/CustomLabelInput';
+import { MenuView } from '@react-native-menu/menu';
+import { ChevronDown } from 'lucide-react-native';
+import { useVehicles } from '@/hooks/VehicleContext';
+import { vehicleDisplayName } from '@/lib/vehicleDisplay';
+import { canSwitchVehicles } from '@/lib/vehicleSelection';
+import { normalizeCustomLabel, recentCustomLabels } from '@/lib/serviceLabel';
 import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Picker } from '@react-native-picker/picker';
 import { useAuth } from '@/hooks/useAuth';
-import { useVehicle } from '@/hooks/useVehicle';
 import { useMaintenanceLogs } from '@/hooks/useMaintenanceLogs';
 import { useAppointments } from '@/hooks/useAppointments';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
@@ -42,8 +48,14 @@ export default function NewLogScreen() {
 
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle } = useVehicle();
-  const { addLog } = useMaintenanceLogs(vehicle?.id);
+  const { vehicles, selectedId } = useVehicles();
+  // Defaults to the selected vehicle; the Vehicle row can retarget this entry.
+  const [vehicleId, setVehicleId] = useState<string | null>(selectedId);
+  useEffect(() => {
+    if (!vehicleId && selectedId) setVehicleId(selectedId);
+  }, [vehicleId, selectedId]);
+  const vehicle = vehicles.find(v => v.id === vehicleId) ?? null;
+  const { logs, addLog } = useMaintenanceLogs(vehicle?.id);
   const { addAppointment } = useAppointments(vehicle?.id);
 
   const [type, setType] = useState<ServiceType>(initialType);
@@ -56,6 +68,7 @@ export default function NewLogScreen() {
   const [shopName, setShopName] = useState('');
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
+  const [customLabel, setCustomLabel] = useState('');
 
   // Appointment-only fields
   const [location, setLocation] = useState('');
@@ -90,6 +103,7 @@ export default function NewLogScreen() {
           service_type: type,
           scheduled_date: toDateString(date),
           scheduled_time: time ? toTimeString24hr(time) : undefined,
+          custom_label: normalizeCustomLabel(type, customLabel),
         });
         Alert.alert('Appointment Saved', 'Your appointment has been added to the Schedule tab.');
         router.back();
@@ -108,6 +122,7 @@ export default function NewLogScreen() {
           shop_name: shopName || undefined,
           cost: cost ? parseFloat(cost) : undefined,
           notes: notes || undefined,
+          custom_label: normalizeCustomLabel(type, customLabel),
         });
         router.back();
       } catch (e: any) {
@@ -132,6 +147,29 @@ export default function NewLogScreen() {
         </TouchableOpacity>
       </View>
 
+      {vehicle && canSwitchVehicles(vehicles) && (
+        <>
+          <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Vehicle</Text>
+          <MenuView
+            actions={vehicles.map(v => ({
+              id: v.id,
+              title: vehicleDisplayName(v, vehicles),
+              state: (v.id === vehicle.id ? 'on' : 'off') as 'on' | 'off',
+            }))}
+            onPressAction={({ nativeEvent }) => setVehicleId(nativeEvent.event)}
+          >
+            <View
+              className="flex-row items-center justify-between border border-gray-300 dark:border-[#3a3a3c] bg-white dark:bg-[#2c2c2e] rounded-xl px-4 py-3 mb-4"
+              accessibilityRole="button"
+              accessibilityLabel={`Vehicle: ${vehicleDisplayName(vehicle, vehicles)}. Change vehicle`}
+            >
+              <Text className="text-base text-gray-900 dark:text-white flex-1" numberOfLines={1}>{vehicleDisplayName(vehicle, vehicles)}</Text>
+              <ChevronDown size={18} color={scheme === 'dark' ? '#8e8e93' : '#6b7280'} />
+            </View>
+          </MenuView>
+        </>
+      )}
+
       <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Service Type *</Text>
       <View className="border border-gray-300 dark:border-[#3a3a3c] rounded-xl mb-4 dark:bg-[#2c2c2e]">
         <Picker
@@ -145,6 +183,9 @@ export default function NewLogScreen() {
           ))}
         </Picker>
       </View>
+      {type === 'other' && (
+        <CustomLabelInput value={customLabel} onChangeText={setCustomLabel} suggestions={recentCustomLabels(logs)} />
+      )}
 
       <Text className="text-sm font-medium text-gray-600 dark:text-[#8e8e93] mb-1">Date *</Text>
       <TouchableOpacity

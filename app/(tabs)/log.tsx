@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
+import { SelectedVehicleLabel } from '@/components/SelectedVehicleLabel';
 import { useMaintenanceLogs } from '@/hooks/useMaintenanceLogs';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
@@ -31,7 +32,10 @@ export default function LogScreen() {
     <View className="flex-1 bg-gray-50 dark:bg-black">
       <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-3 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
         <View className="flex-row items-center justify-between mb-3">
-          <Text className="text-2xl font-bold dark:text-white">Service Log</Text>
+          <View className="flex-1 mr-3">
+            <Text className="text-2xl font-bold dark:text-white">Service Log</Text>
+            <SelectedVehicleLabel />
+          </View>
           <TouchableOpacity onPress={() => router.push(filter === 'all' ? '/log/new' : `/log/new?type=${filter}`)}>
             <Plus size={24} color={colorScheme === 'dark' ? '#0a84ff' : '#2563eb'} />
           </TouchableOpacity>

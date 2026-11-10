@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { Appointment } from '@/types';
-import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
+import { logTypeLabel } from '@/lib/serviceLabel';
 import { Calendar } from 'lucide-react-native';
 
 function formatDate(dateStr: string): string {
@@ -26,7 +26,7 @@ export function AppointmentItem({ appointment, onCancel, onComplete, isFirst, is
     <View className={`flex-row items-center bg-white dark:bg-[#2c2c2e] px-4 py-3 ${roundedTop} ${roundedBottom} ${borderBottom}`}>
       <Calendar size={18} color={scheme === 'dark' ? '#0a84ff' : '#2563eb'} />
       <View className="flex-1 ml-3">
-        <Text className="font-semibold text-gray-900 dark:text-white">{SERVICE_TYPE_LABELS[appointment.service_type]}</Text>
+        <Text className="font-semibold text-gray-900 dark:text-white">{logTypeLabel({ type: appointment.service_type, custom_label: appointment.custom_label })}</Text>
         <Text className="text-sm text-gray-500 dark:text-[#8e8e93]">
           {appointment.shop_name} · {formatDate(appointment.scheduled_date)}
           {appointment.scheduled_time ? ` at ${new Date(`1970-01-01T${appointment.scheduled_time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` : ''}

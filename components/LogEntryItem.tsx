@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useColorScheme } from 'nativewind';
 import { MaintenanceLog } from '@/types';
-import { SERVICE_TYPE_LABELS } from '@/constants/maintenance';
+import { logTypeLabel } from '@/lib/serviceLabel';
 import { ChevronRight } from 'lucide-react-native';
 
 function formatDate(dateStr: string): string {
@@ -28,7 +28,7 @@ export function LogEntryItem({ log, onPress, isFirst, isLast }: Props) {
       onPress={onPress}
     >
       <View className="flex-1">
-        <Text className="font-semibold text-gray-900 dark:text-white">{SERVICE_TYPE_LABELS[log.type]}</Text>
+        <Text className="font-semibold text-gray-900 dark:text-white">{logTypeLabel(log)}</Text>
         <Text className="text-sm text-gray-500 dark:text-[#8e8e93]">
           {formatDate(log.date)}{log.mileage ? ` · ${log.mileage.toLocaleString()} mi` : ''}{log.shop_name ? ` · ${log.shop_name}` : ''}
         </Text>
