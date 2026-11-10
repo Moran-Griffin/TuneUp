@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { FormScrollView } from '@/components/FormScrollView';
 import { useColorScheme } from 'nativewind';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -96,7 +97,7 @@ export default function EditLogScreen() {
   const pickerStyle = scheme === 'dark' ? { color: '#ffffff', backgroundColor: '#2c2c2e' } : {};
 
   return (
-    <ScrollView className="flex-1 bg-white dark:bg-[#1c1c1e]" contentContainerClassName="px-6 pt-16 pb-8">
+    <FormScrollView className="flex-1 bg-white dark:bg-[#1c1c1e]" contentContainerClassName="px-6 pt-16 pb-8">
       <View className="flex-row items-center mb-6">
         <TouchableOpacity onPress={() => router.back()} className="mr-4">
           <Text className="text-blue-600 dark:text-[#0a84ff] text-base">Cancel</Text>
@@ -178,6 +179,6 @@ export default function EditLogScreen() {
       <TouchableOpacity className="mt-4 items-center" onPress={handleDelete}>
         <Text className="text-red-500 dark:text-[#ff453a] font-medium">Delete Entry</Text>
       </TouchableOpacity>
-    </ScrollView>
+    </FormScrollView>
   );
 }

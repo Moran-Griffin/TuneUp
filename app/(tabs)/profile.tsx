@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, Linking, Switch } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, Linking, Switch } from 'react-native';
+import { FormScrollView } from '@/components/FormScrollView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'nativewind';
@@ -197,7 +198,7 @@ export default function ProfileScreen() {
       <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
         <Text className="text-2xl font-bold dark:text-white">Profile</Text>
       </View>
-    <ScrollView className="flex-1" contentContainerClassName="px-4 pt-4 pb-8">
+    <FormScrollView className="flex-1" contentContainerClassName="px-4 pt-4 pb-8">
 
       <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">
         <View className="flex-row items-center justify-between mb-4">
@@ -298,7 +299,7 @@ export default function ProfileScreen() {
           <Text className={`font-medium ${vehicle ? 'text-red-500 dark:text-[#ff453a]' : 'text-gray-300 dark:text-[#48484a]'}`}>Delete Vehicle &amp; All Data</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </FormScrollView>
     </View>
   );
 }

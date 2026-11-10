@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { FormScrollView } from '@/components/FormScrollView';
 import { router } from 'expo-router';
 import { useVehicles } from '@/hooks/VehicleContext';
 
@@ -55,7 +56,7 @@ export default function VehicleSetupScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-8">
+    <FormScrollView className="flex-1 bg-white" contentContainerClassName="px-6 pt-16 pb-8">
       <Text className="text-2xl font-bold mb-1">Your Vehicle</Text>
       <Text className="text-gray-500 mb-6">Enter your car's details to get started</Text>
 
@@ -78,6 +79,6 @@ export default function VehicleSetupScreen() {
           {loading ? 'Saving...' : 'Get Started'}
         </Text>
       </TouchableOpacity>
-    </ScrollView>
+    </FormScrollView>
   );
 }

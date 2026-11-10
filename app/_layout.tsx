@@ -3,6 +3,7 @@ import { AppState, AppStateStatus, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'nativewind';
 import { Stack, router } from 'expo-router';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/hooks/useAuth';
 import { VehicleProvider, useVehicles } from '@/hooks/VehicleContext';
@@ -16,9 +17,11 @@ import '../global.css';
 export default function RootLayout() {
   const { session, loading } = useAuth();
   return (
-    <VehicleProvider userId={session?.user.id}>
-      <RootNavigator session={session} loading={loading} />
-    </VehicleProvider>
+    <KeyboardProvider>
+      <VehicleProvider userId={session?.user.id}>
+        <RootNavigator session={session} loading={loading} />
+      </VehicleProvider>
+    </KeyboardProvider>
   );
 }
 

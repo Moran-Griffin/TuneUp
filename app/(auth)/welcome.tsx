@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { FormKeyboardAvoidingView } from '@/components/FormScrollView';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
@@ -29,9 +30,9 @@ export default function WelcomeScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
+    <FormKeyboardAvoidingView
       className="flex-1 bg-white justify-center px-6"
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior="padding"
     >
       <Text className="text-3xl font-bold mb-2">TuneUp</Text>
       <Text className="text-gray-500 mb-8">Track your vehicle maintenance</Text>
@@ -67,6 +68,6 @@ export default function WelcomeScreen() {
           {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
         </Text>
       </TouchableOpacity>
-    </KeyboardAvoidingView>
+    </FormKeyboardAvoidingView>
   );
 }

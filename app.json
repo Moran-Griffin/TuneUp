@@ -40,7 +40,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#ffffff"
         }
-      ]
+      ],
+      "./plugins/withPodDeploymentTarget"
     ],
     "extra": {
       "router": {},

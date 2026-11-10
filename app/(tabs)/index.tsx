@@ -9,6 +9,7 @@ import { useVehicle } from '@/hooks/useVehicle';
 import { useMaintenanceLogs } from '@/hooks/useMaintenanceLogs';
 import { useAppointments } from '@/hooks/useAppointments';
 import { ServiceDueCard } from '@/components/ServiceDueCard';
+import { FormKeyboardAvoidingView } from '@/components/FormScrollView';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
 import { ServiceType } from '@/types';
@@ -381,7 +382,7 @@ export default function HomeScreen() {
 
       {/* Oil Change Modal */}
       <Modal visible={oilModalVisible} transparent animationType="slide">
-        <View className="flex-1 justify-end bg-black/40">
+        <FormKeyboardAvoidingView behavior="padding" className="flex-1 justify-end bg-black/40">
           <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
             <Text className="text-xl font-bold dark:text-white mb-1">Last Oil Change</Text>
             <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">When was your most recent oil change?</Text>
@@ -426,7 +427,7 @@ export default function HomeScreen() {
               <Text className="text-gray-500 dark:text-[#8e8e93]">Skip</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </FormKeyboardAvoidingView>
       </Modal>
 
       {/* Safety Inspection Modal */}
@@ -511,7 +512,7 @@ export default function HomeScreen() {
 
       {/* Edit Oil Due Modal */}
       <Modal visible={editOilVisible} transparent animationType="slide">
-        <View className="flex-1 justify-end bg-black/40">
+        <FormKeyboardAvoidingView behavior="padding" className="flex-1 justify-end bg-black/40">
           <View className="bg-white dark:bg-[#1c1c1e] rounded-t-3xl px-6 pt-6 pb-10">
             <Text className="text-xl font-bold dark:text-white mb-1">Edit Oil Change</Text>
             <Text className="text-gray-500 dark:text-[#8e8e93] mb-5">Leave a due field blank to use the automatic estimate.</Text>
@@ -566,7 +567,7 @@ export default function HomeScreen() {
               <Text className="text-gray-500 dark:text-[#8e8e93]">Cancel</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </FormKeyboardAvoidingView>
       </Modal>
 
       {/* Edit Inspection Due Modal */}
