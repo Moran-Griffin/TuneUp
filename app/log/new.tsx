@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { FormScrollView } from '@/components/FormScrollView';
 import { CustomLabelInput } from '@/components/CustomLabelInput';
 import { MenuView } from '@react-native-menu/menu';
 import { ChevronDown } from 'lucide-react-native';
-import { useVehicles } from '@/hooks/VehicleContext';
+import { useVehicles, useDefaultVehicleId } from '@/hooks/VehicleContext';
 import { vehicleDisplayName } from '@/lib/vehicleDisplay';
 import { canSwitchVehicles } from '@/lib/vehicleSelection';
 import { normalizeCustomLabel, recentCustomLabels } from '@/lib/serviceLabel';
@@ -48,12 +48,9 @@ export default function NewLogScreen() {
 
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicles, selectedId } = useVehicles();
+  const { vehicles } = useVehicles();
   // Defaults to the selected vehicle; the Vehicle row can retarget this entry.
-  const [vehicleId, setVehicleId] = useState<string | null>(selectedId);
-  useEffect(() => {
-    if (!vehicleId && selectedId) setVehicleId(selectedId);
-  }, [vehicleId, selectedId]);
+  const [vehicleId, setVehicleId] = useDefaultVehicleId();
   const vehicle = vehicles.find(v => v.id === vehicleId) ?? null;
   const { logs, addLog } = useMaintenanceLogs(vehicle?.id);
   const { addAppointment } = useAppointments(vehicle?.id);

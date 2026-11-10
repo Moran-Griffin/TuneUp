@@ -15,6 +15,7 @@ import { VehicleOverview } from '@/components/VehicleOverview';
 import { useVehicles } from '@/hooks/VehicleContext';
 import { vehicleDisplayName } from '@/lib/vehicleDisplay';
 import { canSwitchVehicles } from '@/lib/vehicleSelection';
+import { takeNoRecordPrompts, noRecordPromptKey, NoRecordService } from '@/lib/noRecordPrompts';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
 import { ServiceType } from '@/types';
@@ -106,49 +107,41 @@ export default function HomeScreen() {
     ]);
   }
 
-  // Each vehicle gets its own one-time "no record" prompts.
+  // Switching vehicles drops prompts still queued for the previous one.
   useEffect(() => {
-    promptedServices.current.clear();
     promptQueue.current = [];
     prevEmissionsEnabled.current = undefined;
   }, [vehicle?.id]);
 
-  // Build and fire the prompt queue when vehicle loads or emissions is re-enabled
+  // Build and fire the prompt queue when vehicle loads or emissions is re-enabled.
+  // Each vehicle is asked once per session (keys are per vehicle id).
   useEffect(() => {
     if (!vehicle) return;
 
     // If emissions was just re-enabled, allow re-prompting for it
     if (prevEmissionsEnabled.current === false && vehicle.emissions_enabled) {
-      promptedServices.current.delete('emissions');
+      promptedServices.current.delete(noRecordPromptKey(vehicle.id, 'emissions'));
     }
     prevEmissionsEnabled.current = vehicle.emissions_enabled;
 
-    const queue: PromptItem[] = [];
-
-    if (!vehicle.last_oil_change_date && !vehicle.last_oil_change_mileage && vehicle.oil_due_mileage_override == null && vehicle.oil_due_date_override == null && !promptedServices.current.has('oil')) {
-      promptedServices.current.add('oil');
-      queue.push({
+    const PROMPTS: Record<NoRecordService, PromptItem> = {
+      oil: {
         title: 'When was your last oil change?',
         message: 'We have no oil change on record. Would you like to enter it now?',
         onEnter: () => setOilModalVisible(true),
-      });
-    }
-    if (!vehicle.last_inspection_date && vehicle.inspection_due_date_override == null && !promptedServices.current.has('inspection')) {
-      promptedServices.current.add('inspection');
-      queue.push({
+      },
+      inspection: {
         title: 'When was your last safety inspection?',
         message: 'We have no inspection on record. Would you like to enter it now?',
         onEnter: () => setInspectionModalVisible(true),
-      });
-    }
-    if (vehicle.emissions_enabled && !vehicle.last_emissions_date && vehicle.emissions_due_date_override == null && !promptedServices.current.has('emissions')) {
-      promptedServices.current.add('emissions');
-      queue.push({
+      },
+      emissions: {
         title: 'When was your last emissions test?',
         message: 'We have no emissions test on record. Would you like to enter it now?',
         onEnter: () => setEmissionsModalVisible(true),
-      });
-    }
+      },
+    };
+    const queue = takeNoRecordPrompts(vehicle, promptedServices.current).map(s => PROMPTS[s]);
 
     if (queue.length === 0) return;
     const wasEmpty = promptQueue.current.length === 0;
