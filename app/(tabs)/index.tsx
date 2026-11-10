@@ -10,6 +10,11 @@ import { useMaintenanceLogs } from '@/hooks/useMaintenanceLogs';
 import { useAppointments } from '@/hooks/useAppointments';
 import { ServiceDueCard } from '@/components/ServiceDueCard';
 import { FormKeyboardAvoidingView } from '@/components/FormScrollView';
+import { VehicleSwitcher } from '@/components/VehicleSwitcher';
+import { VehicleOverview } from '@/components/VehicleOverview';
+import { useVehicles } from '@/hooks/VehicleContext';
+import { vehicleDisplayName } from '@/lib/vehicleDisplay';
+import { canSwitchVehicles } from '@/lib/vehicleSelection';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
 import { ServiceType } from '@/types';
@@ -39,6 +44,7 @@ export default function HomeScreen() {
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
   const { vehicle, loading: vehicleLoading, refetch: refetchVehicle, updateVehicle } = useVehicle();
+  const { vehicles, homeView } = useVehicles();
   const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id);
   const { appointments, refetch: refetchAppointments } = useAppointments(vehicle?.id);
 
@@ -99,6 +105,13 @@ export default function HomeScreen() {
       { text: 'Enter Date', onPress: next.onEnter },
     ]);
   }
+
+  // Each vehicle gets its own one-time "no record" prompts.
+  useEffect(() => {
+    promptedServices.current.clear();
+    promptQueue.current = [];
+    prevEmissionsEnabled.current = undefined;
+  }, [vehicle?.id]);
 
   // Build and fire the prompt queue when vehicle loads or emissions is re-enabled
   useEffect(() => {
@@ -273,6 +286,10 @@ export default function HomeScreen() {
     }
   }
 
+  if (!vehicleLoading && homeView === 'overview' && canSwitchVehicles(vehicles)) {
+    return <VehicleOverview />;
+  }
+
   if (vehicleLoading) {
     return <View className="flex-1 items-center justify-center"><Text className="text-gray-400">Loading...</Text></View>;
   }
@@ -316,8 +333,10 @@ export default function HomeScreen() {
   return (
     <>
       <View className="bg-white dark:bg-[#1c1c1e] pt-16 pb-4 px-4 border-b border-gray-100 dark:border-[#2c2c2e]">
-        <Text className="text-2xl font-bold dark:text-white">{vehicle.year} {vehicle.make} {vehicle.model}</Text>
-        <Text className="text-gray-500 dark:text-[#8e8e93]">{vehicle.current_mileage.toLocaleString()} miles</Text>
+        <VehicleSwitcher
+          title={vehicleDisplayName(vehicle, vehicles)}
+          subtitle={`${vehicle.current_mileage.toLocaleString()} miles`}
+        />
       </View>
       <ScrollView className="flex-1 bg-gray-50 dark:bg-black">
 

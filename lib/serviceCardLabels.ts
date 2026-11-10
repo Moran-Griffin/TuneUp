@@ -62,3 +62,12 @@ export function getDueDetail(status: ServiceStatus): string | null {
   }
   return null;
 }
+
+export type StatusTone = 'red' | 'yellow' | 'green';
+
+// Same color rules as ServiceDueCard: overdue → red; due soon or scheduled → yellow; else green.
+export function statusTone(status: ServiceStatus, isScheduled = false): StatusTone {
+  if (status.isOverdue) return 'red';
+  if (status.isDue || isScheduled) return 'yellow';
+  return 'green';
+}
