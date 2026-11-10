@@ -14,6 +14,7 @@ export interface QueuedLog {
   shop_name?: string;
   cost?: number;
   notes?: string;
+  custom_label?: string | null;
   queued_at: string;
 }
 

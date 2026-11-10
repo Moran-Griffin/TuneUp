@@ -6,7 +6,6 @@ import { useColorScheme } from 'nativewind';
 import { Lock, Unlock } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
-import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 
 function Field({ label, value, onChangeText, keyboardType = 'default', locked }: any) {
   return (
@@ -37,7 +36,7 @@ export default function ProfileScreen() {
     setColorScheme(next);
     await AsyncStorage.setItem('colorScheme', next);
   }
-  const { vehicle, updateVehicle, createVehicle, deleteVehicle } = useVehicle(session?.user.id);
+  const { vehicle, updateVehicle, createVehicle, deleteVehicle } = useVehicle();
 
   const [make, setMake] = useState(vehicle?.make ?? '');
   const [model, setModel] = useState(vehicle?.model ?? '');
@@ -181,8 +180,7 @@ export default function ProfileScreen() {
         inspection_interval_months: inspectionIntervalNum,
         emissions_interval_months: emissionsIntervalNum,
       };
-      const saved = vehicle ? await updateVehicle(data) : await createVehicle(data);
-      if (saved) scheduleMaintenanceNotifications(saved).catch(() => {});
+      if (vehicle) await updateVehicle(data); else await createVehicle(data);
       setLocked(true);
       Alert.alert('Saved', 'Vehicle details updated.');
     } catch (e: any) {

@@ -75,16 +75,3 @@ export async function cancelVehicleServiceNotification(vehicleId: string, servic
     maintenanceNotificationId(vehicleId, service as ReminderService)
   ).catch(() => {});
 }
-
-/** @deprecated Removed in the VehicleProvider refactor; use scheduleAllNotifications. */
-export function scheduleMaintenanceNotifications(vehicle: Vehicle): Promise<void> {
-  return scheduleAllNotifications([vehicle]);
-}
-
-/** @deprecated Removed in the VehicleProvider refactor; use cancelVehicleServiceNotification. */
-export async function cancelNotificationForServiceType(serviceType: ServiceType): Promise<void> {
-  if (!REMINDER_SERVICES.has(serviceType)) return;
-  await Notifications.cancelScheduledNotificationAsync(
-    maintenanceNotificationId('', serviceType as ReminderService).slice(1)
-  ).catch(() => {});
-}

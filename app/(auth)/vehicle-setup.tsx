@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import { useVehicles } from '@/hooks/VehicleContext';
 
 function Field({ label, value, onChangeText, placeholder, keyboardType = 'default' }: any) {
   return (
@@ -19,6 +19,7 @@ function Field({ label, value, onChangeText, placeholder, keyboardType = 'defaul
 }
 
 export default function VehicleSetupScreen() {
+  const { createVehicle } = useVehicles();
   const [make, setMake] = useState('');
   const [model, setModel] = useState('');
   const [year, setYear] = useState('');
@@ -34,11 +35,8 @@ export default function VehicleSetupScreen() {
       return;
     }
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from('vehicles').insert({
-      user_id: user.id,
+    try {
+      await createVehicle({
       make,
       model,
       year,
@@ -46,10 +44,13 @@ export default function VehicleSetupScreen() {
       last_oil_change_date: lastOilDate || null,
       last_oil_change_mileage: lastOilMileage ? parseInt(lastOilMileage, 10) : null,
       last_inspection_date: lastInspectionDate || null,
-    });
-    setLoading(false);
-
-    if (error) { Alert.alert('Error', error.message); return; }
+      });
+    } catch (e: any) {
+      Alert.alert('Error', e.message ?? 'Could not save vehicle. If you just signed up, confirm your email and sign in first.');
+      return;
+    } finally {
+      setLoading(false);
+    }
     router.replace('/(tabs)');
   }
 

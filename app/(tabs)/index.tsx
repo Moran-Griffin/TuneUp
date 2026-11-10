@@ -11,7 +11,6 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { ServiceDueCard } from '@/components/ServiceDueCard';
 import { LogEntryItem } from '@/components/LogEntryItem';
 import { getOilChangeStatus, getInspectionStatus, getEmissionsStatus } from '@/lib/serviceStatus';
-import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 import { ServiceType } from '@/types';
 
 function toDateString(d: Date): string {
@@ -38,8 +37,8 @@ type PromptItem = { title: string; message: string; onEnter: () => void };
 export default function HomeScreen() {
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle, loading: vehicleLoading, refetch: refetchVehicle, updateVehicle } = useVehicle(session?.user.id);
-  const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id, vehicle);
+  const { vehicle, loading: vehicleLoading, refetch: refetchVehicle, updateVehicle } = useVehicle();
+  const { logs, loading: logsLoading, refetch: refetchLogs, addLog } = useMaintenanceLogs(vehicle?.id);
   const { appointments, refetch: refetchAppointments } = useAppointments(vehicle?.id);
 
   // Oil change modal
@@ -214,12 +213,11 @@ export default function HomeScreen() {
     }
     setSavingOilEdit(true);
     try {
-      const updated = await updateVehicle({
+      await updateVehicle({
         current_mileage: cm,
         oil_due_mileage_override: dueMileageOverride,
         oil_due_date_override: editOilDueDate ? toDateString(editOilDueDate) : null,
       });
-      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
       setEditOilVisible(false);
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -240,10 +238,9 @@ export default function HomeScreen() {
     if (!vehicle) return;
     setSavingInspectionEdit(true);
     try {
-      const updated = await updateVehicle({
+      await updateVehicle({
         inspection_due_date_override: editInspectionDueDate ? toDateString(editInspectionDueDate) : null,
       });
-      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
       setEditInspectionVisible(false);
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -264,10 +261,9 @@ export default function HomeScreen() {
     if (!vehicle) return;
     setSavingEmissionsEdit(true);
     try {
-      const updated = await updateVehicle({
+      await updateVehicle({
         emissions_due_date_override: editEmissionsDueDate ? toDateString(editEmissionsDueDate) : null,
       });
-      if (updated) scheduleMaintenanceNotifications(updated).catch(() => {});
       setEditEmissionsVisible(false);
     } catch (e: any) {
       Alert.alert('Error', e.message);

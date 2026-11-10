@@ -33,7 +33,7 @@ export default function EditLogScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle } = useVehicle(session?.user.id);
+  const { vehicle } = useVehicle();
   const { logs, updateLog, deleteLog } = useMaintenanceLogs(vehicle?.id);
 
   const log = logs.find(l => l.id === id);

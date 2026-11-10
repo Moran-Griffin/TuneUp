@@ -5,18 +5,25 @@ import { useColorScheme } from 'nativewind';
 import { Stack, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import { useAuth } from '@/hooks/useAuth';
-import { useVehicle } from '@/hooks/useVehicle';
+import { VehicleProvider, useVehicles } from '@/hooks/VehicleContext';
 import { useAppointments } from '@/hooks/useAppointments';
 import { ScheduledAppointmentModal } from '@/components/ScheduledAppointmentModal';
-import { scheduleMaintenanceNotifications } from '@/lib/notifications';
 import { startLocationTracking } from '@/lib/locationTask';
 import { replayQueue, getQueueCount } from '@/lib/offlineQueue';
 import { ServiceType, Shop } from '@/types';
 import '../global.css';
 
 export default function RootLayout() {
-  const { setColorScheme } = useColorScheme();
   const { session, loading } = useAuth();
+  return (
+    <VehicleProvider userId={session?.user.id}>
+      <RootNavigator session={session} loading={loading} />
+    </VehicleProvider>
+  );
+}
+
+function RootNavigator({ session, loading }: { session: ReturnType<typeof useAuth>['session']; loading: boolean }) {
+  const { setColorScheme } = useColorScheme();
 
   // Restore saved color scheme preference on startup
   useEffect(() => {
@@ -24,8 +31,8 @@ export default function RootLayout() {
       if (saved === 'dark' || saved === 'light') setColorScheme(saved);
     });
   }, []);
-  const { vehicle } = useVehicle(session?.user.id);
-  const { addAppointment } = useAppointments(vehicle?.id, vehicle);
+  const { selectedVehicle: vehicle, selectVehicle, setHomeView } = useVehicles();
+  const { addAppointment } = useAppointments(vehicle?.id);
 
   const pendingShop = useRef<Shop | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -41,9 +48,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!session) return;
-    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch((e: unknown) => console.warn('Notification scheduling failed:', e));
     startLocationTracking().catch((e: unknown) => console.warn('Location tracking failed:', e));
-  }, [session, vehicle]);
+  }, [session]);
 
   useEffect(() => {
     if (!session) return;
@@ -62,13 +68,17 @@ export default function RootLayout() {
       if (data?.type === 'location_prompt') {
         router.push('/log/new');
       } else if (data?.type === 'maintenance_reminder') {
+        if (typeof data.vehicleId === 'string') {
+          selectVehicle(data.vehicleId);
+          setHomeView('detail');
+        }
         router.push({ pathname: '/(tabs)/schedule', params: { tab: 'shops' } });
       } else if (data?.type === 'mileage_update') {
         router.push('/(tabs)/profile');
       }
     });
     return () => sub.remove();
-  }, []);
+  }, [selectVehicle, setHomeView]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {

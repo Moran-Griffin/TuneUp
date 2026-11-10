@@ -15,7 +15,7 @@ type Filter = 'all' | ServiceType;
 export default function LogScreen() {
   const { colorScheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle, refetch: refetchVehicle } = useVehicle(session?.user.id);
+  const { vehicle, refetch: refetchVehicle } = useVehicle();
   const { logs, loading, refetch: refetchLogs } = useMaintenanceLogs(vehicle?.id);
   const [filter, setFilter] = useState<Filter>('all');
 

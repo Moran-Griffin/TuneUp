@@ -43,9 +43,9 @@ export default function NewLogScreen() {
 
   const { colorScheme: scheme } = useColorScheme();
   const { session } = useAuth();
-  const { vehicle } = useVehicle(session?.user.id);
-  const { addLog } = useMaintenanceLogs(vehicle?.id, vehicle);
-  const { addAppointment } = useAppointments(vehicle?.id, vehicle);
+  const { vehicle } = useVehicle();
+  const { addLog } = useMaintenanceLogs(vehicle?.id);
+  const { addAppointment } = useAppointments(vehicle?.id);
 
   const [type, setType] = useState<ServiceType>(initialType);
   const [date, setDate] = useState(new Date());

@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MaintenanceLog, ServiceType, Vehicle } from '@/types';
-import { scheduleMaintenanceNotifications } from '@/lib/notifications';
+import { MaintenanceLog, ServiceType } from '@/types';
+import { useVehicles } from '@/hooks/VehicleContext';
 import { enqueueLog } from '@/lib/offlineQueue';
 
-export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehicle | null) {
+export function useMaintenanceLogs(vehicleId: string | undefined) {
+  // Logging oil/inspection/emissions updates the vehicle row via a DB trigger;
+  // refetching vehicles also reschedules notifications (VehicleProvider).
+  const { refetch: refetchVehicles } = useVehicles();
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +31,7 @@ export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehi
     shop_name?: string;
     cost?: number;
     notes?: string;
+    custom_label?: string | null;
   }) {
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
@@ -41,7 +45,7 @@ export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehi
       throw error;
     }
     setLogs(prev => [data, ...prev]);
-    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch(() => {});
+    refetchVehicles().catch(() => {});
     return data;
   }
 
@@ -54,6 +58,7 @@ export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehi
       .single();
     if (error) throw error;
     setLogs(prev => prev.map(l => l.id === id ? data : l));
+    refetchVehicles().catch(() => {});
     return data;
   }
 
@@ -64,7 +69,7 @@ export function useMaintenanceLogs(vehicleId: string | undefined, vehicle?: Vehi
       await fetchLogs();
       throw error;
     }
-    if (vehicle) scheduleMaintenanceNotifications(vehicle).catch(() => {});
+    refetchVehicles().catch(() => {});
   }
 
   return { logs, loading, addLog, updateLog, deleteLog, refetch: fetchLogs };
