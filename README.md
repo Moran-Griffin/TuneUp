@@ -33,7 +33,7 @@ An iOS app for tracking vehicle maintenance history. TuneUp detects when you're 
 - Node.js 18+
 - Xcode (for iOS builds)
 - A [Supabase](https://supabase.com) project
-- A Google Places API key
+- A Google Places API key (your own; see "Bring your own keys")
 
 ### Installation
 
@@ -43,15 +43,48 @@ cd TuneUp
 npm install
 ```
 
-### Environment Setup
+### Bring your own keys
 
-Create a `.env` file in the project root:
+This repo ships with **no API keys**. If you fork or build TuneUp, you need
+your own Supabase project and your own Google Places API key, and you are
+responsible for any usage and billing on them.
 
-```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=your_google_places_key
-```
+1. Copy the template and fill it in:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   EXPO_PUBLIC_GOOGLE_PLACES_API_KEY=your_google_places_key
+   ```
+
+   `.env` is git-ignored. Never commit it, and never paste real keys into
+   `.env.example`.
+
+2. **Supabase:** find the URL and the `anon` public key in your project under
+   **Project Settings → API**. The anon key is designed to be public: the
+   database's row-level security policies (see Database Setup) are what keep
+   each user's data private. Never put the `service_role` key in the app.
+
+3. **Google Places:** in [Google Cloud Console](https://console.cloud.google.com/),
+   create a project, enable billing, and enable **Places API**. Then create
+   an API key under **APIs & Services → Credentials**. The app uses Nearby
+   Search, Text Search, and Place Details. Google's monthly free usage
+   (currently about 5,000 requests per search type) easily covers personal
+   use, but **lock the key down**:
+   - **API restrictions:** restrict the key to **Places API** only.
+   - **Quota cap:** under **APIs & Services → Places API → Quotas**, set a
+     daily request limit, such as 150 per day. This puts a hard ceiling on
+     what a leaked key can cost.
+   - Set a **budget alert** under **Billing → Budgets & alerts**.
+
+> **Why the caps matter:** `EXPO_PUBLIC_*` values are compiled into the app.
+> Anyone who has your built `TuneUp.ipa` can extract the Google key from it.
+> Only give the .ipa to people you trust, and rely on the quota cap rather
+> than on the key staying secret.
 
 ### Database Setup
 
