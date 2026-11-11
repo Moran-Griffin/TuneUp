@@ -1,15 +1,13 @@
 import { useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import * as Location from 'expo-location';
+import { View, Text, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { useVehicle } from '@/hooks/useVehicle';
 import { SelectedVehicleLabel } from '@/components/SelectedVehicleLabel';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useShopSearch } from '@/hooks/useShopSearch';
-import { ShopListItem } from '@/components/ShopListItem';
+import { ShopFinder } from '@/components/ShopFinder';
 import { AppointmentItem } from '@/components/AppointmentItem';
-import { Shop } from '@/types';
 
 type Tab = 'appointments' | 'shops';
 
@@ -19,7 +17,7 @@ export default function ScheduleScreen() {
   const { session } = useAuth();
   const { vehicle } = useVehicle();
   const { appointments, updateAppointment, refetch } = useAppointments(vehicle?.id);
-  const { results, loading: searchLoading, error: searchError, searchNearby } = useShopSearch();
+  const finder = useShopSearch();
 
   useFocusEffect(
     useCallback(() => {
@@ -32,16 +30,9 @@ export default function ScheduleScreen() {
     }, [refetch, tab])
   );
 
-  async function handleFindShops() {
-    if (results.length > 0) {
-      setActiveTab('shops');
-      return;
-    }
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') return;
-    const loc = await Location.getCurrentPositionAsync({});
-    await searchNearby(loc.coords.latitude, loc.coords.longitude);
+  function handleFindShops() {
     setActiveTab('shops');
+    finder.load();
   }
 
   return (
@@ -124,30 +115,8 @@ export default function ScheduleScreen() {
             </View>
           }
         />
-      ) : searchLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#2563eb" />
-        </View>
-      ) : searchError ? (
-        <View className="flex-1 items-center justify-center px-8">
-          <Text className="text-red-400 dark:text-[#ff453a] text-center">{searchError}</Text>
-        </View>
       ) : (
-        <FlatList
-          data={results}
-          keyExtractor={item => item.place_id}
-          renderItem={({ item }) => (
-            <ShopListItem
-              shop={item}
-              onPress={() => router.push({ pathname: '/schedule/shop-detail', params: { shop: JSON.stringify(item) } })}
-            />
-          )}
-          ListEmptyComponent={
-            <View className="items-center justify-center px-8 pt-16">
-              <Text className="text-gray-400 dark:text-[#636366] text-center">Tap "Find a Shop" to search nearby.</Text>
-            </View>
-          }
-        />
+        <ShopFinder finder={finder} />
       )}
     </View>
   );

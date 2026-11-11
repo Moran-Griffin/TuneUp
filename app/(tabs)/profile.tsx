@@ -11,6 +11,7 @@ import { FormScrollView } from '@/components/FormScrollView';
 import { VehicleForm, Field } from '@/components/VehicleForm';
 import { vehicleDisplayName } from '@/lib/vehicleDisplay';
 import { canSwitchVehicles } from '@/lib/vehicleSelection';
+import { THEME_KEY, parseStoredScheme } from '@/lib/theme';
 
 export default function ProfileScreen() {
   const { colorScheme, setColorScheme } = useColorScheme();
@@ -19,10 +20,23 @@ export default function ProfileScreen() {
   const { vehicles, selectedVehicle, updateVehicle } = useVehicles();
   const multi = canSwitchVehicles(vehicles);
 
+  // null until loaded; 'system' = follow the device (the default).
+  const [themePref, setThemePref] = useState<'light' | 'dark' | 'system' | null>(null);
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_KEY).then(raw => setThemePref(parseStoredScheme(raw))).catch(() => setThemePref('system'));
+  }, []);
+
   async function handleThemeToggle(value: boolean) {
     const next = value ? 'dark' : 'light';
     setColorScheme(next);
-    await AsyncStorage.setItem('colorScheme', next);
+    setThemePref(next);
+    await AsyncStorage.setItem(THEME_KEY, next).catch(() => {});
+  }
+
+  async function handleUseDeviceTheme() {
+    setColorScheme('system');
+    setThemePref('system');
+    await AsyncStorage.removeItem(THEME_KEY).catch(() => {});
   }
 
   // Vehicles accordion (2+ vehicles). Collapses whenever a vehicle is added or removed.
@@ -194,6 +208,9 @@ export default function ProfileScreen() {
         <View className="flex-row items-center justify-between">
           <View className="flex-1 mr-4">
             <Text className="text-sm font-medium text-gray-900 dark:text-white">Dark Mode</Text>
+            <Text className="text-xs text-gray-500 dark:text-[#8e8e93] mt-0.5">
+              {themePref === 'system' ? 'Matching your device' : 'Set manually'}
+            </Text>
           </View>
           <Switch
             value={scheme === 'dark'}
@@ -202,6 +219,11 @@ export default function ProfileScreen() {
             thumbColor="#ffffff"
           />
         </View>
+        {themePref && themePref !== 'system' && (
+          <TouchableOpacity onPress={handleUseDeviceTheme} className="mt-3" accessibilityRole="button">
+            <Text className="text-blue-600 dark:text-[#0a84ff] text-sm">Use device setting</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View className="bg-white dark:bg-[#2c2c2e] rounded-2xl p-4 mb-4">

@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Backend | Supabase (Auth + Postgres + Edge Functions) |
 | Push notifications | Expo Push Service → APNs |
 | Location / geofencing | `expo-location` background tasks |
-| Maps / place search | Google Places API (nearby search) |
+| Maps / place search | Google Places API, legacy web service (Nearby Search per type, Text Search, Place Details) |
 | External browser | `Linking.openURL` (user's default browser) |
 
 ## Commands
@@ -43,8 +43,7 @@ app/
   (auth)/              # unauthenticated screens: welcome.tsx, vehicle-setup.tsx
   (tabs)/              # bottom tab bar: index.tsx (Home), log.tsx, schedule.tsx, profile.tsx
   log/                 # new.tsx (add entry), [id].tsx (edit entry)
-  schedule/            # shop-detail.tsx
-components/            # ServiceDueCard, LogEntryItem, AppointmentItem, ShopListItem, ScheduledAppointmentModal,
+components/            # ServiceDueCard, LogEntryItem, AppointmentItem, ShopListItem, ShopFinder, ScheduledAppointmentModal,
                        # VehicleSwitcher, VehicleOverview, VehicleForm, FormScrollView, CustomLabelInput, SelectedVehicleLabel
 hooks/                 # VehicleContext (VehicleProvider/useVehicles), useAuth, useVehicle, useMaintenanceLogs, useAppointments, useShopSearch
 lib/                   # supabase.ts, serviceStatus.ts, notifications.ts, locationTask.ts
@@ -63,6 +62,8 @@ __tests__/             # serviceStatus.test.ts (pure function tests, no RN deps)
 - **Keyboard handling**: forms use `FormScrollView` (react-native-keyboard-controller `KeyboardAwareScrollView`, NativeWind-enabled); `KeyboardProvider` is at the root. Native menus use `@react-native-menu/menu`.
 - **Appointment booking**: `Linking.openURL` opens default browser → user returns manually → `AppState` foreground event triggers "did you schedule?" modal in root layout.
 - **Reminders are local notifications**: `lib/notificationPlan.ts` (pure) builds the full plan for all vehicles, and `scheduleAllNotifications` in `lib/notifications.ts` cancels and reschedules everything. `VehicleProvider` calls it whenever vehicle data changes. Ids are `<vehicleId>:oil_change_reminder` etc. (legacy fixed ids are cancelled too), and `mileage_update` is a single monthly prompt. The `daily-notifications` Edge Function is dormant because no push tokens are ever registered (free Apple account, no APNs).
+- **Find a Shop** (`components/ShopFinder.tsx`, `hooks/useShopSearch.ts`, pure `lib/shopSearch.ts`): legacy Nearby Search takes only ONE `type`, so it runs once each for `car_repair` and `car_dealer` (`rankby=distance`) and merges by place_id. Distance is on-device haversine (straight-line miles), list sorted nearest first. Typing filters the loaded list locally; keyboard Search / quick chips call Text Search. Tapping a shop opens its website directly (Place Details if needed) and stores `pendingShop` for the "did you schedule?" modal; no website → Call / Open in Maps alert. There is no shop detail screen.
+- **Appearance**: `app.json` `userInterfaceStyle` is `automatic`. No saved `colorScheme` key = follow the device; Profile can override or reset to device. The root layout renders nothing until the saved preference is applied, so native Alerts/pickers (which take their style from the key window) never show in the wrong mode.
 - **Background geofence** uses `expo-location` + `expo-task-manager`. Requires "Always" location permission. Dwell time tracked via `AsyncStorage`. Fires local notification after 5 minutes at an auto shop.
 
 ### Data Model (Supabase)

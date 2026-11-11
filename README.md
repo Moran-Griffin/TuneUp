@@ -9,7 +9,7 @@ An iOS app for tracking vehicle maintenance history. TuneUp detects when you're 
 - **Maintenance reminders** — daily notifications (named for the car, e.g. "Oil Change Due: 2015 Honda Civic") when an oil change, inspection, or emissions test is due, until work is logged or an appointment is scheduled
 - **Appointment scheduling** — links to shop websites; on return asks if you scheduled and saves it automatically
 - **Service history** — full log of oil changes, inspections, emissions checks, and other services ("Other" entries can have a custom name)
-- **Shop finder** — finds nearby auto shops using Google Places
+- **Shop finder** — finds nearby auto shops using Google Places, sorted by distance (miles), with a search bar and quick service chips; tapping a shop opens its website
 - **Monthly mileage prompt** — reminds you to update your mileage on the 1st of each month
 - **Offline support** — failed log entries are queued and synced automatically on next launch
 
@@ -94,15 +94,6 @@ certificate is needed.
 
 This runs an unsigned device build and packages the result:
 
-```bash
-# What the script does, if you want to run it by hand:
-xcodebuild -workspace ios/TuneUp.xcworkspace -scheme TuneUp \
-  -configuration Release -sdk iphoneos -derivedDataPath ./build \
-  CODE_SIGNING_ALLOWED=NO
-cd build/Build/Products/Release-iphoneos
-mkdir Payload && cp -R TuneUp.app Payload/ && zip -r TuneUp.ipa Payload
-```
-
 If you changed native config (`app.json`, plugins, native deps) since the last
 build, run `npx expo prebuild -p ios` first to regenerate `ios/`.
 
@@ -118,14 +109,6 @@ Account. Free signatures expire after **7 days**. SideStore can renew them on
 the phone itself, so after the one-time setup below you won't need your Mac.
 
 Official docs: <https://docs.sidestore.io>
-
-#### What you need
-
-- An iPhone running iOS 15 or later, with a passcode set
-- A Mac, used only for step 1
-- A USB cable
-- An Apple Account. A free one works. Sign-in is case-sensitive.
-- Wi-Fi. SideStore can't sign apps over mobile data.
 
 #### 1. Install SideStore (one-time, needs the Mac)
 
@@ -182,11 +165,21 @@ every day on a schedule renews the 7-day signature long before it runs out.
 1. Open **Shortcuts → Shortcuts** tab and tap **+**. Name it **Refresh Apps**.
 2. Add the **Set VPN** action. Set it to **Connect** and choose
    **LocalDevVPN**. Refresh fails if the VPN isn't connected.
-3. Add SideStore's **Refresh All Apps** action. It has to be the **last**
+3. Add a **Wait** action and set it to **3 seconds**. **Set VPN** finishes as
+   soon as iOS *starts* connecting, not when the tunnel is up. Without this
+   wait, Refresh sometimes runs before the VPN is ready, so it works only
+   about half the time.
+4. Add a second **Set VPN → Connect → LocalDevVPN** followed by another
+   **Wait 3 seconds**. If the first connect didn't take, this one retries it.
+   If the VPN is already connected, it does nothing.
+5. Add SideStore's **Refresh All Apps** action. It has to be the **last**
    action, because nothing after it reliably runs.
-4. Tap the action's chevron and turn **Show When Run** **off**.
-5. Tap **Done**, then tap the shortcut once to run it by hand. Allow any
+6. Tap the action's chevron and turn **Show When Run** **off**.
+7. Tap **Done**, then tap the shortcut once to run it by hand. Allow any
    permission prompts. If you skip this, the automation can't run unattended.
+
+The finished shortcut is: Set VPN (Connect) → Wait 3s → Set VPN (Connect) →
+Wait 3s → Refresh All Apps.
 
 **Schedule it**
 
@@ -222,6 +215,13 @@ keeps its data.
 - **"The operation took too long" when the shortcut runs:** this is a known
   quirk, and the refresh usually succeeded anyway. Check the counters in
   **My Apps**.
+- **The shortcut only connects LocalDevVPN some of the time:** check that the
+  shortcut has the **Wait** steps above. Also check **Settings → VPN** for
+  any other VPN profile set to connect on demand (WireGuard, a work VPN, an
+  old StosVPN). iOS runs only one VPN at a time, so an on-demand profile can
+  take over. Turn its on-demand setting off or delete it. If it still fails,
+  just leave LocalDevVPN connected all the time. It only routes traffic to
+  the phone itself, so the shortcut's connect step has nothing left to do.
 - **Refresh or install fails right away:** LocalDevVPN probably isn't
   connected, or the phone is on mobile data. Connect the VPN, switch to Wi-Fi,
   and tap the **7 DAYS** counter to refresh by hand.
@@ -268,7 +268,6 @@ app/
   (auth)/              # Welcome and vehicle setup screens
   (tabs)/              # Home, Log, Schedule, Profile tabs
   log/                 # Add and edit log entry screens
-  schedule/            # Shop detail screen
 components/            # Reusable UI components
 hooks/                 # useAuth, useVehicle, useMaintenanceLogs, useAppointments, useShopSearch
 lib/                   # supabase.ts, serviceStatus.ts, notifications.ts, locationTask.ts, offlineQueue.ts

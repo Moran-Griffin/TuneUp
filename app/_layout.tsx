@@ -12,10 +12,22 @@ import { ScheduledAppointmentModal } from '@/components/ScheduledAppointmentModa
 import { startLocationTracking } from '@/lib/locationTask';
 import { replayQueue, getQueueCount } from '@/lib/offlineQueue';
 import { ServiceType, Shop } from '@/types';
+import { THEME_KEY, parseStoredScheme } from '@/lib/theme';
 import '../global.css';
 
 export default function RootLayout() {
   const { session, loading } = useAuth();
+  const { setColorScheme } = useColorScheme();
+  // Apply the saved appearance before rendering anything, so the first screen and
+  // any native alerts/pickers it shows use the right mode. No saved choice = device.
+  const [themeReady, setThemeReady] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem(THEME_KEY)
+      .then(raw => setColorScheme(parseStoredScheme(raw)))
+      .catch(() => {})
+      .finally(() => setThemeReady(true));
+  }, []);
+  if (!themeReady) return null;
   return (
     <KeyboardProvider>
       <VehicleProvider userId={session?.user.id}>
@@ -26,14 +38,6 @@ export default function RootLayout() {
 }
 
 function RootNavigator({ session, loading }: { session: ReturnType<typeof useAuth>['session']; loading: boolean }) {
-  const { setColorScheme } = useColorScheme();
-
-  // Restore saved color scheme preference on startup
-  useEffect(() => {
-    AsyncStorage.getItem('colorScheme').then(saved => {
-      if (saved === 'dark' || saved === 'light') setColorScheme(saved);
-    });
-  }, []);
   const { selectedVehicle: vehicle, selectVehicle, setHomeView } = useVehicles();
   const { addAppointment } = useAppointments(vehicle?.id);
 
