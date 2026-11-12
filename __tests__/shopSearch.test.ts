@@ -7,6 +7,7 @@ import {
   nearbySearchUrls,
   textSearchUrl,
   SHOP_CHIPS,
+  isWebUrl,
 } from '@/lib/shopSearch';
 import { Shop } from '@/types';
 
@@ -121,5 +122,18 @@ describe('SHOP_CHIPS', () => {
   it('offers the four quick searches in order', () => {
     expect(SHOP_CHIPS.map(c => c.label)).toEqual(['Oil change', 'Tires', 'Inspection', 'Dealer']);
     for (const c of SHOP_CHIPS) expect(c.query.length).toBeGreaterThan(0);
+  });
+});
+
+describe('isWebUrl', () => {
+  it('accepts http and https links', () => {
+    expect(isWebUrl('https://jiffylube.com/locations/123')).toBe(true);
+    expect(isWebUrl('HTTP://example.com')).toBe(true);
+  });
+
+  it('rejects other schemes and junk', () => {
+    for (const u of ['tel:5551234', 'sms:555', 'javascript:alert(1)', 'someapp://open', 'example.com', '', undefined, null]) {
+      expect(isWebUrl(u as any)).toBe(false);
+    }
   });
 });

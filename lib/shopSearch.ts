@@ -74,3 +74,8 @@ export function textSearchUrl(query: string, origin: LatLng, key: string): strin
 export function placeDetailsUrl(placeId: string, key: string): string {
   return `${PLACES_BASE}/details/json?place_id=${encodeURIComponent(placeId)}&fields=website,formatted_phone_number&key=${key}`;
 }
+
+/** Only plain web links may be opened or saved as a shop's website. */
+export function isWebUrl(url: string | null | undefined): url is string {
+  return typeof url === 'string' && /^https?:\/\/[^\s]+$/i.test(url.trim());
+}

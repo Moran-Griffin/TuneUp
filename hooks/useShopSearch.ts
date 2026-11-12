@@ -11,6 +11,7 @@ import {
   nearbySearchUrls,
   textSearchUrl,
   placeDetailsUrl,
+  isWebUrl,
 } from '@/lib/shopSearch';
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY!;
@@ -114,11 +115,13 @@ export function useShopSearch() {
     if (openingId) return;
     setOpeningId(shop.place_id);
     try {
-      let website = shop.website;
+      // Only http(s) links are opened or saved; anything else is treated as "no website".
+      let website = isWebUrl(shop.website) ? shop.website.trim() : undefined;
       let phone: string | undefined;
       if (!website) {
         const data = await fetch(placeDetailsUrl(shop.place_id, API_KEY)).then(r => r.json()).catch(() => null);
-        website = data?.result?.website ?? undefined;
+        const fetched = data?.result?.website;
+        website = isWebUrl(fetched) ? fetched.trim() : undefined;
         phone = data?.result?.formatted_phone_number ?? undefined;
       }
       if (website) {

@@ -96,6 +96,7 @@ supabase/migrations/20260401000001_fixes.sql
 supabase/migrations/20260403000001_oil_interval_months.sql
 supabase/migrations/20260616000001_service_due_overrides.sql
 supabase/migrations/20261109000001_multi_vehicle.sql
+supabase/migrations/20261112000001_definer_search_path.sql
 ```
 
 Run them in order, pasting each into the SQL editor. Don't use `supabase db push`:
