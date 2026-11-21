@@ -181,8 +181,8 @@ describe('placesErrorMessage', () => {
     expect(placesErrorMessage({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } })).toMatch(/daily limit/i);
   });
 
-  it('falls back to status and message', () => {
-    expect(placesErrorMessage({ error: { code: 400, status: 'INVALID_ARGUMENT', message: 'Bad field' } })).toBe('INVALID_ARGUMENT: Bad field');
+  it('falls back to a generic message without Google\'s raw text', () => {
+    expect(placesErrorMessage({ error: { code: 400, status: 'INVALID_ARGUMENT', message: 'Bad field in project 123456' } })).toBe('Shop search failed (INVALID_ARGUMENT). Try again later.');
     expect(placesErrorMessage(null)).toBe('Shop search failed. Check your connection and try again.');
   });
 });

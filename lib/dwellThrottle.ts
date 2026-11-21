@@ -28,6 +28,8 @@ export function dwellDecision(input: { now: number; at: LatLng; speed: number | 
   if (typeof speed === 'number' && speed > DWELL_LOOKUP.maxSpeedMps) return { kind: 'moving' };
   if (last) {
     const age = now - last.at;
+    // Clock moved backwards: the stored time can't be trusted, so check again.
+    if (age < 0) return { kind: 'lookup' };
     if (age < DWELL_LOOKUP.minGapMs) return { kind: 'reuse', shopName: last.shopName };
     const movedM = haversineMiles(at, { lat: last.lat, lng: last.lng }) * METERS_PER_MILE;
     if (age < DWELL_LOOKUP.reuseWindowMs && movedM <= DWELL_LOOKUP.reuseRadiusM) return { kind: 'reuse', shopName: last.shopName };

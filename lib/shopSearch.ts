@@ -131,7 +131,8 @@ export function placesErrorMessage(json: any): string {
   if (err.status === 'RESOURCE_EXHAUSTED' || err.code === 429) {
     return 'The daily limit for shop searches has been reached. Try again tomorrow.';
   }
-  return `${err.status ?? 'ERROR'}: ${message || 'Search failed'}`;
+  // Don't show Google's raw text (it can include the Cloud project number).
+  return `Shop search failed (${err.status ?? err.code ?? 'ERROR'}). Try again later.`;
 }
 
 /** Only plain web links may be opened or saved as a shop's website. */

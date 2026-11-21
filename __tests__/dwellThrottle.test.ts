@@ -44,3 +44,10 @@ describe('dwellDecision', () => {
     expect(DWELL_LOOKUP).toEqual({ maxSpeedMps: 2, minGapMs: 3 * 60_000, reuseRadiusM: 75, reuseWindowMs: 15 * 60_000 });
   });
 });
+
+describe('dwellDecision clock safety', () => {
+  it('looks up again if the clock moved backwards since the last check', () => {
+    const last = { at: T0, ...HERE, shopName: 'Jiffy Lube' };
+    expect(dwellDecision({ now: T0 - 60_000, at: HERE, speed: 0, last }).kind).toBe('lookup');
+  });
+});

@@ -44,3 +44,6 @@ yarn-error.*
 # ios build artifacts
 /build
 *.ipa
+
+# Supabase CLI local state (contains project ref)
+supabase/.temp/

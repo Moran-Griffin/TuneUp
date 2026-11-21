@@ -15,7 +15,7 @@ import {
   PlacesRequest,
   isWebUrl,
 } from '@/lib/shopSearch';
-import { DETAILS_CACHE_KEY, DetailsCache, ShopDetails, cachedDetails, withCachedDetails } from '@/lib/shopDetailsCache';
+import { DETAILS_CACHE_KEY, DetailsCache, ShopDetails, cachedDetails, withCachedDetails, parseDetailsCache, detailsFromResponse } from '@/lib/shopDetailsCache';
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY!;
 
@@ -34,12 +34,7 @@ async function fetchPlaces(req: PlacesRequest): Promise<Shop[]> {
 }
 
 async function readDetailsCache(): Promise<DetailsCache> {
-  try {
-    const raw = await AsyncStorage.getItem(DETAILS_CACHE_KEY);
-    return raw ? (JSON.parse(raw) as DetailsCache) : {};
-  } catch {
-    return {};
-  }
+  return parseDetailsCache(await AsyncStorage.getItem(DETAILS_CACHE_KEY).catch(() => null));
 }
 
 /** Website/phone for a shop: on-device cache first, Place Details (New) only on a miss. */
@@ -50,12 +45,9 @@ async function shopDetails(placeId: string): Promise<ShopDetails> {
   const req = placeDetailsRequest(placeId, API_KEY);
   const res = await fetch(req.url, req.init).catch(() => null);
   const data = res ? await res.json().catch(() => null) : null;
-  const details: ShopDetails = {
-    website: isWebUrl(data?.websiteUri) ? data.websiteUri.trim() : null,
-    phone: typeof data?.nationalPhoneNumber === 'string' ? data.nationalPhoneNumber : null,
-  };
-  // Only cache real answers, so a network blip or quota error is retried next tap.
-  if (res?.ok) {
+  const { details, cacheable } = detailsFromResponse(!!res?.ok, data);
+  // Only cache real answers, so a network blip, quota error or bad body is retried next tap.
+  if (cacheable) {
     await AsyncStorage.setItem(DETAILS_CACHE_KEY, JSON.stringify(withCachedDetails(cache, placeId, details, Date.now()))).catch(() => {});
   }
   return details;

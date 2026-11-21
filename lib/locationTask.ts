@@ -22,13 +22,19 @@ async function getNearbyAutoShop(lat: number, lng: number): Promise<string | nul
   return parsePlaceNames(await res.json())[0] ?? null;
 }
 
+// In-memory copy of the last check, so a storage write failure can't make every
+// location update trigger a new request while the task stays alive.
+let lastCheckMemo: LastDwellCheck | null = null;
+
 async function readLastCheck(): Promise<LastDwellCheck | null> {
   try {
     const raw = await AsyncStorage.getItem(LAST_CHECK_KEY);
-    return raw ? (JSON.parse(raw) as LastDwellCheck) : null;
+    const stored = raw ? (JSON.parse(raw) as LastDwellCheck) : null;
+    if (stored && typeof stored.at === 'number' && (!lastCheckMemo || stored.at >= lastCheckMemo.at)) return stored;
   } catch {
-    return null;
+    // fall through to the in-memory copy
   }
+  return lastCheckMemo;
 }
 
 /** Shop name at this spot, using the throttle so most updates make no request. null = not at a shop or moving. */
@@ -44,7 +50,8 @@ async function shopAt(lat: number, lng: number, speed: number | null): Promise<s
     // Network/quota failure: record it as "no shop" so we wait the minimum gap before retrying.
   }
   const check: LastDwellCheck = { at: now, lat, lng, shopName };
-  await AsyncStorage.setItem(LAST_CHECK_KEY, JSON.stringify(check));
+  lastCheckMemo = check;
+  await AsyncStorage.setItem(LAST_CHECK_KEY, JSON.stringify(check)).catch(() => {});
   return shopName;
 }
 
