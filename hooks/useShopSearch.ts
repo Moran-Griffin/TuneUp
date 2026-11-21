@@ -6,25 +6,59 @@ import { Shop } from '@/types';
 import {
   LatLng,
   ShopWithDistance,
-  mergeShops,
   sortByDistance,
-  nearbySearchUrls,
-  textSearchUrl,
-  placeDetailsUrl,
+  nearbySearchRequest,
+  textSearchRequest,
+  placeDetailsRequest,
+  parsePlaces,
+  placesErrorMessage,
+  PlacesRequest,
   isWebUrl,
 } from '@/lib/shopSearch';
+import { DETAILS_CACHE_KEY, DetailsCache, ShopDetails, cachedDetails, withCachedDetails } from '@/lib/shopDetailsCache';
 
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY!;
 
 type TextSearch = { label: string; query: string; results: ShopWithDistance[] };
 
-async function fetchPlaces(url: string): Promise<Shop[]> {
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status === 'ZERO_RESULTS') return [];
-  if (data.status !== 'OK') throw new Error(`${data.status}: ${data.error_message || 'Search failed'}`);
-  // Text Search returns formatted_address instead of vicinity.
-  return (data.results ?? []).map((r: any) => ({ ...r, vicinity: r.vicinity ?? r.formatted_address ?? '' }));
+async function fetchPlaces(req: PlacesRequest): Promise<Shop[]> {
+  let res: Response;
+  try {
+    res = await fetch(req.url, req.init);
+  } catch {
+    throw new Error(placesErrorMessage(null));
+  }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(placesErrorMessage(data));
+  return parsePlaces(data);
+}
+
+async function readDetailsCache(): Promise<DetailsCache> {
+  try {
+    const raw = await AsyncStorage.getItem(DETAILS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as DetailsCache) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Website/phone for a shop: on-device cache first, Place Details (New) only on a miss. */
+async function shopDetails(placeId: string): Promise<ShopDetails> {
+  const cache = await readDetailsCache();
+  const hit = cachedDetails(cache, placeId, Date.now());
+  if (hit) return hit;
+  const req = placeDetailsRequest(placeId, API_KEY);
+  const res = await fetch(req.url, req.init).catch(() => null);
+  const data = res ? await res.json().catch(() => null) : null;
+  const details: ShopDetails = {
+    website: isWebUrl(data?.websiteUri) ? data.websiteUri.trim() : null,
+    phone: typeof data?.nationalPhoneNumber === 'string' ? data.nationalPhoneNumber : null,
+  };
+  // Only cache real answers, so a network blip or quota error is retried next tap.
+  if (res?.ok) {
+    await AsyncStorage.setItem(DETAILS_CACHE_KEY, JSON.stringify(withCachedDetails(cache, placeId, details, Date.now()))).catch(() => {});
+  }
+  return details;
 }
 
 async function locate(): Promise<LatLng> {
@@ -47,12 +81,11 @@ export function useShopSearch() {
   const origin = useRef<LatLng | null>(null);
 
   const runNearby = useCallback(async (at: LatLng) => {
-    const lists = await Promise.all(nearbySearchUrls(at, API_KEY).map(fetchPlaces));
-    setNearby(sortByDistance(mergeShops(lists), at));
+    setNearby(sortByDistance(await fetchPlaces(nearbySearchRequest(at, API_KEY)), at));
   }, []);
 
   const runText = useCallback(async (label: string, query: string, at: LatLng) => {
-    const results = await fetchPlaces(textSearchUrl(query, at, API_KEY));
+    const results = await fetchPlaces(textSearchRequest(query, at, API_KEY));
     setText({ label, query, results: sortByDistance(results, at) });
   }, []);
 
@@ -116,14 +149,7 @@ export function useShopSearch() {
     setOpeningId(shop.place_id);
     try {
       // Only http(s) links are opened or saved; anything else is treated as "no website".
-      let website = isWebUrl(shop.website) ? shop.website.trim() : undefined;
-      let phone: string | undefined;
-      if (!website) {
-        const data = await fetch(placeDetailsUrl(shop.place_id, API_KEY)).then(r => r.json()).catch(() => null);
-        const fetched = data?.result?.website;
-        website = isWebUrl(fetched) ? fetched.trim() : undefined;
-        phone = data?.result?.formatted_phone_number ?? undefined;
-      }
+      const { website, phone } = await shopDetails(shop.place_id);
       if (website) {
         await AsyncStorage.setItem('pendingShop', JSON.stringify({ ...shop, website }));
         await Linking.openURL(website);

@@ -2,25 +2,50 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { nearbySearchRequest, parsePlaceNames } from '@/lib/shopSearch';
+import { dwellDecision, LastDwellCheck } from '@/lib/dwellThrottle';
 
 export const LOCATION_TASK_NAME = 'tuneup-location-task';
 const DWELL_KEY = '@tuneup/dwell_start';
 const DWELL_NAME_KEY = '@tuneup/dwell_name';
+const LAST_CHECK_KEY = '@tuneup/dwell_last_check';
 const DWELL_MS = 5 * 60 * 1000;
 const DETECTION_RADIUS_M = 100;
 
-const PLACES_URL = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json';
-
+/** Nearest repair shop or dealer within 100 m, name only (Nearby Search Pro SKU). */
 async function getNearbyAutoShop(lat: number, lng: number): Promise<string | null> {
   const apiKey = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY;
   if (!apiKey) return null;
-  const url = `${PLACES_URL}?location=${lat},${lng}&radius=${DETECTION_RADIUS_M}&type=car_repair|car_dealer&key=${apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  if (data.status === 'OK' && data.results?.length > 0) {
-    return data.results[0].name as string;
+  const req = nearbySearchRequest({ lat, lng }, apiKey, { radiusM: DETECTION_RADIUS_M, maxResults: 1, fieldMask: 'places.displayName' });
+  const res = await fetch(req.url, req.init);
+  if (!res.ok) throw new Error(`Places ${res.status}`);
+  return parsePlaceNames(await res.json())[0] ?? null;
+}
+
+async function readLastCheck(): Promise<LastDwellCheck | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_CHECK_KEY);
+    return raw ? (JSON.parse(raw) as LastDwellCheck) : null;
+  } catch {
+    return null;
   }
-  return null;
+}
+
+/** Shop name at this spot, using the throttle so most updates make no request. null = not at a shop or moving. */
+async function shopAt(lat: number, lng: number, speed: number | null): Promise<string | null> {
+  const now = Date.now();
+  const decision = dwellDecision({ now, at: { lat, lng }, speed, last: await readLastCheck() });
+  if (decision.kind === 'moving') return null;
+  if (decision.kind === 'reuse') return decision.shopName;
+  let shopName: string | null = null;
+  try {
+    shopName = await getNearbyAutoShop(lat, lng);
+  } catch {
+    // Network/quota failure: record it as "no shop" so we wait the minimum gap before retrying.
+  }
+  const check: LastDwellCheck = { at: now, lat, lng, shopName };
+  await AsyncStorage.setItem(LAST_CHECK_KEY, JSON.stringify(check));
+  return shopName;
 }
 
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
@@ -29,10 +54,10 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
   const { locations } = data as { locations: Location.LocationObject[] };
   if (!locations?.length) return;
 
-  const { latitude, longitude } = locations[locations.length - 1].coords;
+  const { latitude, longitude, speed } = locations[locations.length - 1].coords;
 
   try {
-    const shopName = await getNearbyAutoShop(latitude, longitude);
+    const shopName = await shopAt(latitude, longitude, speed);
 
     if (shopName) {
       const existing = await AsyncStorage.getItem(DWELL_KEY);
@@ -60,7 +85,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
       await AsyncStorage.removeItem(DWELL_NAME_KEY);
     }
   } catch (_) {
-    // Places API can fail silently
+    // Storage/notification failures are non-fatal for a background tick.
   }
 });
 

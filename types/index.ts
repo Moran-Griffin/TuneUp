@@ -76,7 +76,6 @@ export interface Shop {
   place_id: string;
   name: string;
   vicinity: string;
-  rating?: number;
   website?: string;
   geometry: { location: { lat: number; lng: number } };
 }

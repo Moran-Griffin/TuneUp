@@ -70,16 +70,26 @@ responsible for any usage and billing on them.
    each user's data private. Never put the `service_role` key in the app.
 
 3. **Google Places:** in [Google Cloud Console](https://console.cloud.google.com/),
-   create a project, enable billing, and enable **Places API**. Then create
-   an API key under **APIs & Services → Credentials**. The app uses Nearby
-   Search, Text Search, and Place Details. Google's monthly free usage
-   (currently about 5,000 requests per search type) easily covers personal
-   use, but **lock the key down**:
-   - **API restrictions:** restrict the key to **Places API** only.
-   - **Quota cap:** under **APIs & Services → Places API → Quotas**, set a
-     daily request limit, such as 150 per day. This puts a hard ceiling on
-     what a leaked key can cost.
-   - Set a **budget alert** under **Billing → Budgets & alerts**.
+   create a project, enable billing, and enable **Places API (New)** (not the
+   legacy "Places API"). Then create an API key under
+   **APIs & Services → Credentials**.
+
+   The app asks Google only for each shop's ID, name, address and location,
+   which keeps every search in the cheaper "Pro" tier (5,000 free per month
+   each for Nearby Search and Text Search). A shop's website and phone are
+   looked up only when you tap it (1,000 free per month) and are then cached on
+   the phone for 30 days. The background "are you at a shop?" check skips
+   lookups while you're driving and reuses recent answers. Normal personal
+   use stays well inside the free tier, but **lock the key down**:
+   - **API restrictions:** restrict the key to **Places API (New)** only.
+     Make sure nothing else, especially **Gemini / Generative Language API**,
+     is enabled in the project: leaked Maps keys are being abused for Gemini.
+   - **Quota cap:** under **APIs & Services → Places API (New) → Quotas &
+     System Limits**, set a daily request limit, such as 150 per day. This puts
+     a hard ceiling on what a leaked key can cost. If the legacy **Places API**
+     is enabled from an older build, cap it at 0 or disable it.
+   - Set a **budget alert** under **Billing → Budgets & alerts**. Budgets only
+     email you; the quota cap is what actually stops usage.
 
 > **Why the caps matter:** `EXPO_PUBLIC_*` values are compiled into the app.
 > Anyone who has your built `TuneUp.ipa` can extract the Google key from it.

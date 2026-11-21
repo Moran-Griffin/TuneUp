@@ -1,11 +1,15 @@
 import {
   haversineMiles,
   formatMiles,
-  mergeShops,
   sortByDistance,
   filterShops,
-  nearbySearchUrls,
-  textSearchUrl,
+  nearbySearchRequest,
+  textSearchRequest,
+  placeDetailsRequest,
+  parsePlaces,
+  parsePlaceNames,
+  placesErrorMessage,
+  SHOP_FIELD_MASK,
   SHOP_CHIPS,
   isWebUrl,
 } from '@/lib/shopSearch';
@@ -46,15 +50,6 @@ describe('formatMiles', () => {
   });
 });
 
-describe('mergeShops', () => {
-  it('dedupes by place_id keeping the first occurrence', () => {
-    const a = shop('a', 40, -75);
-    const merged = mergeShops([[a, shop('b', 40, -75)], [shop('a', 1, 1, { name: 'dupe' }), shop('c', 40, -75)]]);
-    expect(merged.map(s => s.place_id)).toEqual(['a', 'b', 'c']);
-    expect(merged[0]).toBe(a);
-  });
-});
-
 describe('sortByDistance', () => {
   it('attaches distance and sorts nearest first', () => {
     const far = shop('far', 40.5, -75);
@@ -91,30 +86,104 @@ describe('filterShops', () => {
   });
 });
 
-describe('nearbySearchUrls', () => {
-  it('makes one request per type (legacy API ignores multi-type lists), ranked by distance', () => {
-    const urls = nearbySearchUrls(ORIGIN, 'KEY');
-    expect(urls).toHaveLength(2);
-    expect(urls[0]).toContain('type=car_repair');
-    expect(urls[1]).toContain('type=car_dealer');
-    for (const u of urls) {
-      expect(u).toContain('location=40,-75');
-      expect(u).toContain('rankby=distance');
-      expect(u).not.toContain('|');
-      expect(u).not.toContain('radius=');
-      expect(u).toContain('key=KEY');
-    }
+function body(req: { init: RequestInit }) {
+  return JSON.parse(req.init.body as string);
+}
+function headers(req: { init: RequestInit }) {
+  return req.init.headers as Record<string, string>;
+}
+
+describe('SHOP_FIELD_MASK', () => {
+  it('asks only for Pro-tier fields (no rating, website, phone)', () => {
+    expect(SHOP_FIELD_MASK.split(',').sort()).toEqual(
+      ['places.displayName', 'places.formattedAddress', 'places.id', 'places.location', 'places.shortFormattedAddress'].sort()
+    );
   });
 });
 
-describe('textSearchUrl', () => {
-  it('encodes the query and biases to the user location', () => {
-    const u = textSearchUrl('tire & brake', ORIGIN, 'KEY');
-    expect(u).toContain('/textsearch/json?');
-    expect(u).toContain('query=tire%20%26%20brake');
-    expect(u).toContain('location=40,-75');
-    expect(u).toContain('radius=');
-    expect(u).toContain('key=KEY');
+describe('nearbySearchRequest', () => {
+  it('is one POST to Places API (New) for both shop types, nearest first', () => {
+    const req = nearbySearchRequest(ORIGIN, 'KEY');
+    expect(req.url).toBe('https://places.googleapis.com/v1/places:searchNearby');
+    expect(req.init.method).toBe('POST');
+    expect(headers(req)['X-Goog-Api-Key']).toBe('KEY');
+    expect(headers(req)['X-Goog-FieldMask']).toBe(SHOP_FIELD_MASK);
+    expect(headers(req)['Content-Type']).toBe('application/json');
+    const b = body(req);
+    expect(b.includedTypes).toEqual(['car_repair', 'car_dealer']);
+    expect(b.rankPreference).toBe('DISTANCE');
+    expect(b.maxResultCount).toBe(20);
+    expect(b.locationRestriction.circle.center).toEqual({ latitude: 40, longitude: -75 });
+    expect(b.locationRestriction.circle.radius).toBeLessThanOrEqual(50000);
+  });
+
+  it('supports a tight single-result lookup with a custom mask', () => {
+    const req = nearbySearchRequest(ORIGIN, 'KEY', { radiusM: 100, maxResults: 1, fieldMask: 'places.displayName' });
+    expect(headers(req)['X-Goog-FieldMask']).toBe('places.displayName');
+    expect(body(req).maxResultCount).toBe(1);
+    expect(body(req).locationRestriction.circle.radius).toBe(100);
+  });
+});
+
+describe('textSearchRequest', () => {
+  it('posts the raw query biased to the user location', () => {
+    const req = textSearchRequest('tire & brake', ORIGIN, 'KEY');
+    expect(req.url).toBe('https://places.googleapis.com/v1/places:searchText');
+    expect(req.init.method).toBe('POST');
+    expect(headers(req)['X-Goog-FieldMask']).toBe(SHOP_FIELD_MASK);
+    const b = body(req);
+    expect(b.textQuery).toBe('tire & brake');
+    expect(b.pageSize).toBe(20);
+    expect(b.locationBias.circle.center).toEqual({ latitude: 40, longitude: -75 });
+  });
+});
+
+describe('placeDetailsRequest', () => {
+  it('GETs only website and phone for one place', () => {
+    const req = placeDetailsRequest('ChIJ/abc', 'KEY');
+    expect(req.url).toBe('https://places.googleapis.com/v1/places/ChIJ%2Fabc');
+    expect(req.init.method).toBe('GET');
+    expect(headers(req)['X-Goog-FieldMask']).toBe('websiteUri,nationalPhoneNumber');
+  });
+});
+
+describe('parsePlaces', () => {
+  it('maps New API places onto the Shop shape', () => {
+    const shops = parsePlaces({
+      places: [
+        { id: 'p1', displayName: { text: 'Jiffy Lube' }, shortFormattedAddress: '12 Oak Ave', formattedAddress: '12 Oak Ave, Town, ST', location: { latitude: 40.1, longitude: -75.2 } },
+        { id: 'p2', displayName: { text: 'Pep Boys' }, formattedAddress: '5 Lube Rd, Town', location: { latitude: 40.2, longitude: -75.3 } },
+      ],
+    });
+    expect(shops).toEqual([
+      { place_id: 'p1', name: 'Jiffy Lube', vicinity: '12 Oak Ave', geometry: { location: { lat: 40.1, lng: -75.2 } } },
+      { place_id: 'p2', name: 'Pep Boys', vicinity: '5 Lube Rd, Town', geometry: { location: { lat: 40.2, lng: -75.3 } } },
+    ]);
+  });
+
+  it('treats an empty response as no results', () => {
+    expect(parsePlaces({})).toEqual([]);
+  });
+
+  it('drops places missing an id, name or location', () => {
+    expect(parsePlaces({ places: [{ id: 'x', displayName: { text: 'No loc' } }, { displayName: { text: 'No id' }, location: { latitude: 1, longitude: 1 } }] })).toEqual([]);
+  });
+});
+
+describe('placesErrorMessage', () => {
+  it('explains how to fix a key without Places API (New) enabled', () => {
+    const msg = placesErrorMessage({ error: { code: 403, status: 'PERMISSION_DENIED', message: 'Places API (New) has not been used in project 123 before or it is disabled.' } });
+    expect(msg).toMatch(/Places API \(New\)/);
+    expect(msg).toMatch(/Google Cloud/);
+  });
+
+  it('explains a hit daily quota', () => {
+    expect(placesErrorMessage({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded' } })).toMatch(/daily limit/i);
+  });
+
+  it('falls back to status and message', () => {
+    expect(placesErrorMessage({ error: { code: 400, status: 'INVALID_ARGUMENT', message: 'Bad field' } })).toBe('INVALID_ARGUMENT: Bad field');
+    expect(placesErrorMessage(null)).toBe('Shop search failed. Check your connection and try again.');
   });
 });
 
@@ -135,5 +204,12 @@ describe('isWebUrl', () => {
     for (const u of ['tel:5551234', 'sms:555', 'javascript:alert(1)', 'someapp://open', 'example.com', '', undefined, null]) {
       expect(isWebUrl(u as any)).toBe(false);
     }
+  });
+});
+
+describe('parsePlaceNames', () => {
+  it('reads names from a name-only (places.displayName) response', () => {
+    expect(parsePlaceNames({ places: [{ displayName: { text: 'Jiffy Lube' } }, { displayName: {} }] })).toEqual(['Jiffy Lube']);
+    expect(parsePlaceNames({})).toEqual([]);
   });
 });
